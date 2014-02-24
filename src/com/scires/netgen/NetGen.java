@@ -11,7 +11,7 @@ public class NetGen {
 
 	public static void main (String[] args){
 		JFrame f = new IPGUI();
-		f.show();
+		f.setVisible(true);
 
 	}
 }

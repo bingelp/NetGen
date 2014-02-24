@@ -13,6 +13,8 @@ public class Parser {
 	private static String SPACE = "\\s";
 	private static String IP_GENERIC = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}";
 	private static String IP_HOST = ".*192\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[1-9]{1,3}.*";
+	private static String PERMIT_DENY = "permit|deny";
+	private static String ERROR = "Error: ";
 	private static int BUFFER_SIZE = 1000;
 	private static String[] COMMAND_LIST =
 			{
@@ -66,7 +68,7 @@ public class Parser {
 		int command;
 		for ( String s : files){
 			try{
-				File f = new File(this.directory + s);
+				File f = new File(this.directory + "\\" + s);
 				this.reader = new LineNumberReader(new FileReader(f));
 				hostname = f.getName().split("-")[0];
 				this.d = new Device(hostname);
@@ -100,7 +102,7 @@ public class Parser {
 					}
 				}
 			} catch (Exception e){
-				System.out.println("Error: " + e.getMessage());
+				System.out.println(ERROR + e.getMessage());
 			} finally {try{if (this.reader != null)this.reader.close();} catch (IOException e){}}
 
 			if (d != null)
@@ -163,14 +165,14 @@ public class Parser {
 				}
 			}
 		}catch(Exception e){
-			System.out.println("Error: " + e.getMessage());
+			System.out.println(ERROR + e.getMessage());
 		}finally {
 			this.d.addKeyChain(kc);
 			kc=null;
 			try{
 				this.reader.reset();
 			}catch(Exception e){
-				System.out.println("Error: " + e.getMessage());
+				System.out.println(ERROR + e.getMessage());
 			}
 		}
 	}
@@ -191,7 +193,7 @@ public class Parser {
 				}
 			}
 		} catch(Exception e){
-			System.out.println("Error: " + e.getMessage());
+			System.out.println(ERROR + e.getMessage());
 		} finally{
 			if( i != null){
 				this.d.addInterface(i);
@@ -199,7 +201,7 @@ public class Parser {
 				try{
 					this.reader.reset();
 				} catch(Exception e){
-					System.out.println("Error: " + e.getMessage());
+					System.out.println(ERROR + e.getMessage());
 				}
 			}
 		}
@@ -222,14 +224,14 @@ public class Parser {
 				}
 			}
 		} catch(Exception e){
-			System.out.println("Error: " + e.getMessage());
+			System.out.println(ERROR + e.getMessage());
 		} finally{
 			this.d.addRouter(rr);
 			rr=null;
 			try{
 				this.reader.reset();
 			} catch(Exception e){
-				System.out.println("Error: " + e.getMessage());
+				System.out.println(ERROR + e.getMessage());
 			}
 		}
 	}
@@ -245,7 +247,10 @@ public class Parser {
 		if(line.matches(IP_HOST)){
 			String[] split = line.split(SPACE);
 			for ( String word : split){
-				if( word.matches(IP_HOST)){
+				if( word.matches(PERMIT_DENY) ){
+					System.out.println(word);
+				}
+				if( word.matches(IP_HOST) ){
 					ArrayList<int[]> locations = null;
 					int lineIndex = line.indexOf(word);
 					int lineNumber = reader.getLineNumber();
@@ -282,7 +287,7 @@ public class Parser {
 		for(int i=0; i<this.IPs.size(); i++){
 			int ii = i*2;
 			this.IP=this.IPs.get(newIPs[ii]);
-			String line = null;
+			String line;
 
 			for(int[] entry : this.IP){
 				try {
@@ -290,22 +295,30 @@ public class Parser {
 					String outFilePath = outDirPath + "\\" + this.files[entry[0]];
 					File outDir = new File(outDirPath);
 
+
+					//Make the Generated folder if it doesn't exist
 					boolean dirExists = true;
 					if (!outDir.exists()) {
 						dirExists = outDir.mkdir();
 					}
 					if (dirExists) {
+						//Reads in our generated file from a previous run if it exists
 						File outFile = new File(outFilePath);
 						if (outFile.exists())
 							this.reader = new LineNumberReader(new FileReader(outFilePath));
 						else
-							this.reader = new LineNumberReader(new FileReader(this.files[entry[0]]));
+							this.reader = new LineNumberReader(new FileReader(this.directory + "\\" + this.files[entry[0]]));
 
+
+						//Write to a tmp file
 						this.writer = new FileOutputStream(outFilePath+".tmp");
 
+						//skip lines leading up to the one we need to edit
 						for (int linesSkipped = 0; linesSkipped < entry[1] - 1; linesSkipped++)
 							this.writer.write((this.reader.readLine() + '\n').getBytes());
 
+						//read in line
+						//replace old ip with new one
 						line = this.reader.readLine() + '\n';
 						line = line.replace(newIPs[ii], newIPs[ii + 1]);
 						this.writer.write(line.getBytes());
@@ -315,6 +328,8 @@ public class Parser {
 						this.writer.flush();
 						this.writer.close();
 						this.reader.close();
+
+						//rename tmp to txt
 						if (outFile.exists())
 							outFile.delete();
 						new File(outFilePath+".tmp").renameTo(outFile);
