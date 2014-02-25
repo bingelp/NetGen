@@ -22,6 +22,9 @@ public class Device {
 		this.ntps = new ArrayList<NTP>();
 	}
 
+	public ArrayList<KeyChain> getKeyChain(){return this.keyChains;}
+	public ArrayList<AccessList> getACLs(){return this.accessLists;}
+
 	public void addKeyChain(KeyChain kc){this.keyChains.add(kc);}
 	public void addInterface(Interface i){this.interfaces.add(i);}
 	public void addRouter(Router r){this.routers.add(r);}

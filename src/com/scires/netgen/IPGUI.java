@@ -1,28 +1,32 @@
 package com.scires.netgen;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
  * Created by Justin on 2/21/14.
  */
 public class IPGUI extends JFrame {
-
-	private JPanel panel = null;
 	private JButton generateButton = null;
-	private ArrayList<LabeledText> textFields = null;
+	private Map<String, LabeledText> textFields;
+	private ArrayList<JComponent> tabs = null;
 	private Parser p = null;
-	private Map<String, ArrayList<int[]>> IPs = null;
 	private File directory = null;
 
 	public IPGUI(){
+		textFields = new HashMap<String, LabeledText>();
 		chooseDirectory();
-		processDirectory();
+		if(directory != null){
+			processDirectory();
+		}
 	}
 
 	private void chooseDirectory(){
@@ -36,56 +40,83 @@ public class IPGUI extends JFrame {
 		}else{
 			System.out.println("No directory chosen");
 		}
-
 	}
 	private void processDirectory(){
+		//Process the config files in the directory
 		p = new Parser(directory.getAbsolutePath());
 		p.processFiles();
-		IPs = p.getIPs();
-		this.setTitle("IPs");
-		this.setSize(300, IPs.size() * 50);
-		panel = new JPanel();
-		textFields = new ArrayList<LabeledText>();
+		//Make tabbed pane
+		JTabbedPane tabbedPane = new JTabbedPane();
+		//Make tabs
+		tabs = new ArrayList<JComponent>();
+		for(Field f:Location.class.getDeclaredFields()){
+			if(f.getModifiers() == 8){
+				JComponent tab = new JPanel(false);
+				tab.setLayout(new GridLayout(0, 2));
+				tabs.add(tab);
+				tabbedPane.addTab(f.getName(), null, tabs.get(tabs.size()-1), f.getName());
+			}
+		}
+		//Setup window
+		this.setTitle("NetGen");
+
+		//Make generate button
 		generateButton = new JButton("Generate");
 		generateButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				GenerateThread g = new GenerateThread(IPs, textFields, p);
+				Generator g = new Generator(p.getUpdateables(), textFields, directory, p.getFiles());
 				g.run();
 			}
 		});
-		int index = 0;
-		for(String key : IPs.keySet()){
-			textFields.add(index, new LabeledText(15, null, key));
-			String o = String.valueOf((index+1)*111);
-			textFields.get(index).textField.setText(String.valueOf("192." + o + "." + o + "." + o));
-			this.panel = textFields.get(index).addTo(this.panel);
-			index++;
+		//create fields based on config file
+		Map<String, Entry> updateables = p.getUpdateables();
+		Iterator it = updateables.entrySet().iterator();
+		while(it.hasNext()){
+			Map.Entry pair = (Map.Entry)it.next();
+			for(Location l : ((Entry) pair.getValue()).locations){
+				Entry e = (Entry)pair.getValue();
+				addField(e.target, l.tab, e.labelText);
+			}
 		}
-		panel.add(generateButton);
-		this.add(panel);
-	}
-}
+		JScrollPane scrollPane = new JScrollPane(tabbedPane);
+		this.add(scrollPane, BorderLayout.CENTER);
+		this.add(generateButton, BorderLayout.SOUTH);
 
-class GenerateThread extends Thread{
-	private Map<String, ArrayList<int[]>> IPs = null;
-	private ArrayList<LabeledText> textFields = null;
-	private Parser p = null;
-
-	public GenerateThread(Map<String, ArrayList<int[]>> IPs, ArrayList<LabeledText> textFields, Parser p){
-		this.IPs = IPs;
-		this.textFields = textFields;
-		this.p  = p;
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.pack();
+		this.setMinimumSize(new Dimension(600, 200));
+		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		this.setMaximumSize( new Dimension( 600, new Double(gd.getDisplayMode().getHeight()*0.7).intValue() ) );
+		this.setVisible(true);
 	}
-	public void run(){
-		Object[] keys = IPs.keySet().toArray();
-		Hashtable<String, String> newIPss = new Hashtable<String, String>(IPs.size());
-		String[] newIPs = new String[IPs.size()*2];
-		for(int i=0; i<keys.length; i++){
-			int ii = i*2;
-			newIPs[ii]=String.valueOf(keys[i]);
-			newIPs[ii+1]=textFields.get(i).textField.getText();
+
+	private void addField(String target, int tab, String labelText){
+		//check if we already have a field for this
+		boolean found = false;
+		String key = target+labelText;
+		if(textFields.containsKey(key))
+			found = true;
+		if(!found){
+			textFields.put(key, new LabeledText(15, target, labelText));
+			this.tabs.set(tab, textFields.get(key).addTo(this.tabs.get(tab)));
 		}
-		p.generate(newIPs);
+	}
+
+	@Override
+	public void paint(Graphics g){
+		Dimension d = getSize();
+		Dimension m = getMaximumSize();
+		boolean resize = d.width > m.width || d.height > m.height;
+		d.width = Math.min(m.width, d.width);
+		d.height = Math.min(m.height, d.height);
+		if (resize) {
+			Point p = getLocation();
+			setVisible(false);
+			setSize(d);
+			setLocation(p);
+			setVisible(true);
+		}
+		super.paint(g);
 	}
 }

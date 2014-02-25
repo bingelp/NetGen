@@ -1,5 +1,6 @@
 package com.scires.netgen;
 
+import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +15,7 @@ public class Parser {
 	private static String IP_GENERIC = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}";
 	private static String IP_HOST = ".*192\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[1-9]{1,3}.*";
 	private static String PERMIT_DENY = "permit|deny";
-	private static String ERROR = "Error: ";
+	public static String ERROR = "Error: ";
 	private static int BUFFER_SIZE = 1000;
 	private static String[] COMMAND_LIST =
 			{
@@ -34,7 +35,6 @@ public class Parser {
 	private String[] files = null;
 	private Device d = null;
 	private LineNumberReader reader = null;
-	private FileOutputStream writer = null;
 	private int fileIndex = 0;
 	private String domainName = null;
 	private String nameServer = null;
@@ -44,22 +44,20 @@ public class Parser {
 	private String vtpPwd = null;
 	private String loggingServer = null;
 	private ArrayList<Device> devices = null;
-	private Map<String, ArrayList<int[]>> IPs = null;
-	private ArrayList<int[]> IP = null;
+	private Map<String, Entry> updateables = null;
 
 	public Parser(String d){
 		this.directory = new File(d);
 		this.files = directory.list();
 		this.devices = new ArrayList<Device>();
-		this.IPs = new HashMap<String, ArrayList<int[]>>();
+		this.updateables = new HashMap<String, Entry>();
 	}
 
 	public ArrayList<Device> getDevices(){
 		return this.devices;
 	}
-	public Map<String, ArrayList<int[]>> getIPs(){
-		return this.IPs;
-	}
+	public String[] getFiles(){ return this.files; }
+	public Map<String, Entry> getUpdateables(){return this.updateables;}
 
 	public void processFiles(){
 		this.fileIndex = 0;
@@ -75,18 +73,19 @@ public class Parser {
 				while ((text = this.reader.readLine()) != null){
 					text=text.trim();
 					if(!isComment(text) && (command = getCommand(text)) != -1){
+
 						switch(command){
-							case 0: processDomainName(text);
+							case 0: processGlobal(text, "Domain Name");
 									break;
-							case 1: processNameServer(text);
+							case 1: processGlobal(text, "Name Server");
 									break;
-							case 2: processSecret(text);
+							case 2: processGlobal(text, "Secret");
 									break;
 							case 3: processCredentials(text);
 									break;
 							case 4: processKeyChain(text);
 									break;
-							case 5: processVTPPwd(text);
+							case 5: processGlobal(text, "VTP Password");
 									break;
 							case 6: processInterface(text);
 									break;
@@ -122,27 +121,18 @@ public class Parser {
 		}
 		return out;
 	}
-
 	private boolean isComment(String line){
 		boolean out = false; if (line.startsWith("!")){ out = true;} return out;}
 
-	private void processDomainName(String line){
-		if(this.domainName == null)
-			this.domainName = line.split(SPACE)[2];}
-	private void processNameServer(String line){
-		if(this.nameServer == null)
-			this.nameServer = line.split(SPACE)[2];}
-	private void processSecret(String line){
-		if(this.secret == null)
-			this.secret = line.split(SPACE)[2];}
+	private void processGlobal(String line, String labelText){
+		addLocation(line.split(SPACE)[2], Location.GLOBAL, labelText);
+	}
 	private void processCredentials(String line){
-		if(this.username == null && this.password == null){
-			String[] split = line.split(SPACE);
-			this.username = split[1];
-			this.password = split[3];}}
+		String[] split = line.split(SPACE);
+		addLocation(split[1], Location.GLOBAL, "Username");
+		addLocation(split[3], Location.GLOBAL, "Password");
+	}
 	private void processKeyChain(String line){
-		KeyChain kc = new KeyChain(line.split(SPACE)[2]);
-		Key k = null;
 		String[] split;
 		String[] commands = {"key", "key-string", "accept-lifetime", "send-lifetime"};
 		try{
@@ -150,25 +140,22 @@ public class Parser {
 				line = line.trim();
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
-				if(line.startsWith(commands[1])){
-					k.setKeyString(split[1]);
-				}else if(line.startsWith(commands[0])){
-					k = new Key (Integer.valueOf(split[1]));
+				if(line.startsWith(commands[0])){
+
+				}else if(line.startsWith(commands[1])){
+
 				}else if(line.startsWith(commands[2]) || split[0].matches(commands[3])){
-					String time = line.substring(split[0].length());
+					String labelText;
 					if(line.startsWith(commands[2]))
-						k.setAcceptLifetime(time);
-					else{
-						k.setSendLifetime(time);
-						kc.addKey(k);
-					}
+						labelText = commands[2];
+					else
+						labelText = commands[3];
+					addLocation(line.substring(line.indexOf(' ')+1, line.length()), Location.KEY_CHAIN, labelText);
 				}
 			}
 		}catch(Exception e){
 			System.out.println(ERROR + e.getMessage());
 		}finally {
-			this.d.addKeyChain(kc);
-			kc=null;
 			try{
 				this.reader.reset();
 			}catch(Exception e){
@@ -190,6 +177,7 @@ public class Parser {
 					i = new Interface(name);
 					i.setIP(split[2]);
 					i.setMask(split[3]);
+					addLocation(split[2], Location.INTERFACE, name);
 				}
 			}
 		} catch(Exception e){
@@ -209,7 +197,6 @@ public class Parser {
 	}
 	private void processRouter(String line){
 		Router rr = new Router(line.split(SPACE)[2]);
-		Route r = null;
 		String[] commands = {"network", "ip route"};
 		String[] split = null;
 		try{
@@ -235,33 +222,20 @@ public class Parser {
 			}
 		}
 	}
-	private void processVTPPwd(String line){
-		if(this.vtpPwd == null)
-			this.vtpPwd = line.split(SPACE)[2];}
 	private void processLogging(String line){
-		if(this.loggingServer == null){
 			line = line.split(SPACE)[1];
 			if(line.matches(IP_GENERIC))
-				this.loggingServer = line;}}
+				addLocation(line, Location.GLOBAL, "Logging Server");
+	}
 	private void processAccessList(String line){
 		if(line.matches(IP_HOST)){
 			String[] split = line.split(SPACE);
 			for ( String word : split){
 				if( word.matches(PERMIT_DENY) ){
-					System.out.println(word);
+					//System.out.println(word);
 				}
 				if( word.matches(IP_HOST) ){
-					ArrayList<int[]> locations = null;
-					int lineIndex = line.indexOf(word);
-					int lineNumber = reader.getLineNumber();
-					int[] location = {fileIndex, lineNumber, lineIndex};
-					if (this.IPs.containsKey(word)){
-						locations = this.IPs.get(word);
-					}else{
-						locations = new ArrayList<int[]>();
-					}
-					locations.add(location);
-					this.IPs.put(word, locations);
+					addLocation(word, Location.ACCESS_LIST, split[2]);
 				}
 			}
 		}
@@ -270,73 +244,25 @@ public class Parser {
 		String[] split = line.split(SPACE);
 		NTP ntp = new NTP(split[2], Integer.valueOf(split[4]));
 		d.addNTP(ntp);
+		addLocation(split[2], Location.NTP_PEER, "Peer");
 	}
 
-	public void generate(String[] newIPs){
-		//Delete files in Generated folder
-		File generatedDirectory = new File(this.directory + "\\Generated");
-		if(generatedDirectory.exists()){
-			String[] files = generatedDirectory.list();
-			for(String file: files){
-				new File(generatedDirectory.getPath(), file).delete();
-			}
+	private void addLocation(String target, int tab, String labelText){
+		Location location = new Location();
+		location.setFileIndex(fileIndex);
+		location.setLineNumber(reader.getLineNumber());
+		location.setTab(tab);
+		Entry entry;
+		if(this.updateables.containsKey(target+labelText)){
+			entry = this.updateables.get(target+labelText);
+			entry.locations.add(location);
+		}else{
+			entry = new Entry();
+			entry.setTarget(target);
+			entry.setLabelText(labelText);
+			entry.locations.add(location);
 		}
-
-
-		Object[] IPs_a = IPs.keySet().toArray();
-		for(int i=0; i<this.IPs.size(); i++){
-			int ii = i*2;
-			this.IP=this.IPs.get(newIPs[ii]);
-			String line;
-
-			for(int[] entry : this.IP){
-				try {
-					String outDirPath = this.directory + "\\Generated";
-					String outFilePath = outDirPath + "\\" + this.files[entry[0]];
-					File outDir = new File(outDirPath);
-
-
-					//Make the Generated folder if it doesn't exist
-					boolean dirExists = true;
-					if (!outDir.exists()) {
-						dirExists = outDir.mkdir();
-					}
-					if (dirExists) {
-						//Reads in our generated file from a previous run if it exists
-						File outFile = new File(outFilePath);
-						if (outFile.exists())
-							this.reader = new LineNumberReader(new FileReader(outFilePath));
-						else
-							this.reader = new LineNumberReader(new FileReader(this.directory + "\\" + this.files[entry[0]]));
-
-
-						//Write to a tmp file
-						this.writer = new FileOutputStream(outFilePath+".tmp");
-
-						//skip lines leading up to the one we need to edit
-						for (int linesSkipped = 0; linesSkipped < entry[1] - 1; linesSkipped++)
-							this.writer.write((this.reader.readLine() + '\n').getBytes());
-
-						//read in line
-						//replace old ip with new one
-						line = this.reader.readLine() + '\n';
-						line = line.replace(newIPs[ii], newIPs[ii + 1]);
-						this.writer.write(line.getBytes());
-						while ((line = this.reader.readLine()) != null) {
-							this.writer.write((line + '\n').getBytes());
-						}
-						this.writer.flush();
-						this.writer.close();
-						this.reader.close();
-
-						//rename tmp to txt
-						if (outFile.exists())
-							outFile.delete();
-						new File(outFilePath+".tmp").renameTo(outFile);
-					}
-				} catch (Exception e) {
-				}
-			}
-		}
+		this.updateables.put(target+labelText, entry);
 	}
+
 }

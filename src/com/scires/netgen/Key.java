@@ -3,7 +3,7 @@ package com.scires.netgen;
 /**
  * Created by Justin on 2/19/14.
  */
-public class Key {
+public class Key{
 	public int number;
 	public String keyString = null;
 	public String acceptLifetime = null;

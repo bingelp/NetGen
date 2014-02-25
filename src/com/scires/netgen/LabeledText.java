@@ -22,10 +22,17 @@ public class LabeledText {
 		label = new JLabel(labelText);
 	}
 
+	public String getTarget(){return this.label.getText();}
+
 	public JPanel addTo(JPanel panel){
 		panel.add(this.label);
 		panel.add(this.textField);
 		return panel;
+	}
+	public JComponent addTo(JComponent component){
+		component.add(this.label);
+		component.add(this.textField);
+		return component;
 	}
 
 }
