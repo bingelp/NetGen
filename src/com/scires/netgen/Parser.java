@@ -212,11 +212,11 @@ public class Parser {
 		final String IP_HOST = ".*192\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[1-9]{1,3}.*";
 		if(line.matches(IP_HOST)){
 			String[] split = line.split(SPACE);
-			final String PERMIT_DENY = "permit|deny";
+			//final String PERMIT_DENY = "permit|deny";
 			for ( String word : split){
-				if( word.matches(PERMIT_DENY) ){
+/*				if( word.matches(PERMIT_DENY) ){
 					//System.out.println(word);
-				}
+				}*/
 				if( word.matches(IP_HOST) ){
 					addLocation(word, Location.ACCESS_LIST, split[2], null);
 				}
