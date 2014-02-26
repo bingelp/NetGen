@@ -27,8 +27,8 @@ public class IPGUI extends JFrame {
 	public IPGUI(){
 		textFields = new HashMap<String, LabeledText>();
 		groups = new HashMap<String, PanelGroup>();
-		//chooseDirectory();
-		directory= new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
+		chooseDirectory();
+		//directory= new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
 		if(directory != null){
 			processDirectory();
 		}
@@ -107,28 +107,30 @@ public class IPGUI extends JFrame {
 
 	private void addField(String target, int tab, String labelText, String group){
 		//if there is a group associated, then add it to that group
-		PanelGroup p;
+		PanelGroup p = null;
 		String groupKey = null;
-		if(group != null)
+		String key = target+labelText;
+
+		//If we have a group specified, make a key
+		//find a the group if we have already created the group
+		//if the group isn't there, make a new one
+		if(group != null){
 			groupKey = group + tab;
-		if(groupKey != null){
-			if(!groups.containsKey(groupKey)){
+			if(!groups.containsKey(groupKey))
 				p = new PanelGroup(group);
-			}
-			else{
+			else
 				p=groups.get(groupKey);
-			}
-			String key = target+labelText;
-			if(!textFields.containsKey(key)){
-				textFields.put(key, new LabeledText(15, target, labelText));
+		}
+		//If we don't have a textField for this entry, make a new one
+		//If it belongs to a group add the text field to that group,
+		//If it does not belong to a group, add it straight to the tab
+		if(!textFields.containsKey(key)){
+			textFields.put(key, new LabeledText(15, target, labelText));
+			if( group != null){
 				textFields.get(key).addTo(p.panel);
 				this.groups.put(groupKey, p);
 				this.tabs.set(tab, this.groups.get(groupKey).addTo(this.tabs.get(tab)));
-			}
-		}else{
-			//check if we already have a field for this
-			String key = target+labelText;
-			if(!textFields.containsKey(key)){
+			}else{
 				textFields.put(key, new LabeledText(15, target, labelText));
 				this.tabs.set(tab, this.textFields.get(key).addTo(this.tabs.get(tab)));
 			}

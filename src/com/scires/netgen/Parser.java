@@ -33,44 +33,30 @@ public class Parser {
 			};
 	private File directory = null;
 	private File f = null;
+	private String fileName = null;
 	private String[] files = null;
-	private Device d = null;
 	private LineNumberReader reader = null;
 	private int fileIndex = 0;
-	private String domainName = null;
-	private String nameServer = null;
-	private String secret = null;
-	private String username = null;
-	private String password = null;
-	private String vtpPwd = null;
-	private String loggingServer = null;
-	private ArrayList<Device> devices = null;
 	private Map<String, Entry> updateables = null;
 
 	public Parser(String d){
 		this.directory = new File(d);
 		this.files = directory.list();
-		this.devices = new ArrayList<Device>();
 		this.updateables = new HashMap<String, Entry>();
 	}
 
-	public ArrayList<Device> getDevices(){
-		return this.devices;
-	}
 	public String[] getFiles(){ return this.files; }
 	public Map<String, Entry> getUpdateables(){return this.updateables;}
 
 	public void processFiles(){
 		this.fileIndex = 0;
 		String text;
-		String hostname;
 		int command;
 		for ( String s : files){
 			try{
 				f = new File(this.directory + "\\" + s);
+				fileName = f.getName().split("-")[0];
 				this.reader = new LineNumberReader(new FileReader(f));
-				hostname = f.getName().split("-")[0];
-				this.d = new Device(hostname);
 				while ((text = this.reader.readLine()) != null){
 					text=text.trim();
 					if(!isComment(text) && (command = getCommand(text)) != -1){
@@ -96,7 +82,7 @@ public class Parser {
 									break;
 							case 9: processAccessList(text);
 									break;
-							case 10:processNTP(d, text);
+							case 10:processNTP(text);
 									break;
 						}
 					}
@@ -104,10 +90,6 @@ public class Parser {
 			} catch (Exception e){
 				System.out.println(ERROR + e.getMessage());
 			} finally {try{if (this.reader != null)this.reader.close();} catch (IOException e){}}
-
-			if (d != null)
-				this.devices.add(d);
-
 			this.fileIndex++;
 		}
 	}
@@ -167,28 +149,24 @@ public class Parser {
 		}
 	}
 	private void processInterface(String line){
-		Interface i = null;
 		String name = line.split(SPACE)[1];
-		String[] split = null;
+		String[] split;
 		String[] commands = {"ip address"};
+		boolean addedInterface = false;
 		try{
 			while ( (line = this.reader.readLine()).startsWith(" ") || line.trim().startsWith(commands[0]) ){
 				line = line.trim();
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					i = new Interface(name);
-					i.setIP(split[2]);
-					i.setMask(split[3]);
-					addLocation(split[2], Location.INTERFACE, name, f.getName().split("-")[0]);
+					addLocation(split[2], Location.INTERFACE, name, fileName);
+					addedInterface=true;
 				}
 			}
 		} catch(Exception e){
 			System.out.println(ERROR + e.getMessage());
 		} finally{
-			if( i != null){
-				this.d.addInterface(i);
-				i=null;
+			if( addedInterface ){
 				try{
 					this.reader.reset();
 				} catch(Exception e){
@@ -199,29 +177,24 @@ public class Parser {
 
 	}
 	private void processRouter(String line){
-		Router rr = new Router(line.split(SPACE)[2]);
-		String routerNumber = " - " + line.split(SPACE)[2];
+		String routerNumber = fileName + " - " + line.split(SPACE)[2];
 		String[] commands = {"network", "ip route"};
-		String[] split = null;
+		String[] split;
 		try{
 			while( (line = this.reader.readLine()).startsWith(" ") ){
 				line = line.trim();
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					rr.addNetwork(split[1]);
-					addLocation(split[1],Location.ROUTER,commands[0],f.getName().split("-")[0]+routerNumber);
+					addLocation(split[1],Location.ROUTER,commands[0],routerNumber);
 				}else if( line.startsWith(commands[1]) ){
-					rr.addRoute(new Route(split[2], split[3], split[4]));
 					String ip = split[split.length-1];
-					addLocation(ip, Location.ROUTER,commands[1],f.getName().split("-")[0]+routerNumber);
+					addLocation(ip, Location.ROUTER,commands[1],routerNumber);
 				}
 			}
 		} catch(Exception e){
 			System.out.println(ERROR + e.getMessage());
 		} finally{
-			this.d.addRouter(rr);
-			rr=null;
 			try{
 				this.reader.reset();
 			} catch(Exception e){
@@ -247,11 +220,10 @@ public class Parser {
 			}
 		}
 	}
-	private void processNTP(Device d, String line){
+	private void processNTP(String line){
 		String[] split = line.split(SPACE);
 		NTP ntp = new NTP(split[2], Integer.valueOf(split[4]));
-		d.addNTP(ntp);
-		addLocation(split[2], Location.NTP_PEER, "Peer", f.getName().split("-")[0]);
+		addLocation(split[2], Location.NTP_PEER, "Peer", fileName);
 	}
 
 	private void addLocation(String target, int tab, String labelText, String group){
