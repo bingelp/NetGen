@@ -12,15 +12,18 @@ public class Location {
 	static int NTP_PEER		= 5;
 
 	public int fileIndex, lineNumber, tab;
+	public String group;
 
 	public Location(){}
 
 	public Location( int fileIndex, int lineNumber, int tab ){
 		this.fileIndex = fileIndex;
 		this.lineNumber = lineNumber;
+		this.tab = tab;
 	}
 
 	public void setFileIndex(int fileIndex){this.fileIndex = fileIndex;}
 	public void setLineNumber(int lineNumber){this.lineNumber = lineNumber;}
 	public void setTab(int tab){this.tab = tab;}
+	public void setGroup(String group){this.group = group;}
 }

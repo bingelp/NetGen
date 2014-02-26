@@ -32,6 +32,7 @@ public class Parser {
 					"ntp peer"
 			};
 	private File directory = null;
+	private File f = null;
 	private String[] files = null;
 	private Device d = null;
 	private LineNumberReader reader = null;
@@ -66,7 +67,7 @@ public class Parser {
 		int command;
 		for ( String s : files){
 			try{
-				File f = new File(this.directory + "\\" + s);
+				f = new File(this.directory + "\\" + s);
 				this.reader = new LineNumberReader(new FileReader(f));
 				hostname = f.getName().split("-")[0];
 				this.d = new Device(hostname);
@@ -125,23 +126,25 @@ public class Parser {
 		boolean out = false; if (line.startsWith("!")){ out = true;} return out;}
 
 	private void processGlobal(String line, String labelText){
-		addLocation(line.split(SPACE)[2], Location.GLOBAL, labelText);
+		addLocation(line.split(SPACE)[2], Location.GLOBAL, labelText, null);
 	}
 	private void processCredentials(String line){
 		String[] split = line.split(SPACE);
-		addLocation(split[1], Location.GLOBAL, "Username");
-		addLocation(split[3], Location.GLOBAL, "Password");
+		addLocation(split[1], Location.GLOBAL, "Username", null);
+		addLocation(split[3], Location.GLOBAL, "Password", null);
 	}
 	private void processKeyChain(String line){
 		String[] split;
-		String[] commands = {"key", "key-string", "accept-lifetime", "send-lifetime"};
+		String[] commands = {"key ", "key-string", "accept-lifetime", "send-lifetime"};
 		try{
+
+			String keyNumber = "";
 			while ((line = this.reader.readLine()).startsWith(" ")){
 				line = line.trim();
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if(line.startsWith(commands[0])){
-
+					keyNumber = "key " + split[1];
 				}else if(line.startsWith(commands[1])){
 
 				}else if(line.startsWith(commands[2]) || split[0].matches(commands[3])){
@@ -150,7 +153,7 @@ public class Parser {
 						labelText = commands[2];
 					else
 						labelText = commands[3];
-					addLocation(line.substring(line.indexOf(' ')+1, line.length()), Location.KEY_CHAIN, labelText);
+					addLocation(line.substring(line.indexOf(' ')+1, line.length()), Location.KEY_CHAIN, labelText, keyNumber);
 				}
 			}
 		}catch(Exception e){
@@ -177,7 +180,7 @@ public class Parser {
 					i = new Interface(name);
 					i.setIP(split[2]);
 					i.setMask(split[3]);
-					addLocation(split[2], Location.INTERFACE, name);
+					addLocation(split[2], Location.INTERFACE, name, f.getName().split("-")[0]);
 				}
 			}
 		} catch(Exception e){
@@ -197,6 +200,7 @@ public class Parser {
 	}
 	private void processRouter(String line){
 		Router rr = new Router(line.split(SPACE)[2]);
+		String routerNumber = " - " + line.split(SPACE)[2];
 		String[] commands = {"network", "ip route"};
 		String[] split = null;
 		try{
@@ -206,8 +210,11 @@ public class Parser {
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
 					rr.addNetwork(split[1]);
+					addLocation(split[1],Location.ROUTER,commands[0],f.getName().split("-")[0]+routerNumber);
 				}else if( line.startsWith(commands[1]) ){
 					rr.addRoute(new Route(split[2], split[3], split[4]));
+					String ip = split[split.length-1];
+					addLocation(ip, Location.ROUTER,commands[1],f.getName().split("-")[0]+routerNumber);
 				}
 			}
 		} catch(Exception e){
@@ -225,7 +232,7 @@ public class Parser {
 	private void processLogging(String line){
 			line = line.split(SPACE)[1];
 			if(line.matches(IP_GENERIC))
-				addLocation(line, Location.GLOBAL, "Logging Server");
+				addLocation(line, Location.GLOBAL, "Logging Server", null);
 	}
 	private void processAccessList(String line){
 		if(line.matches(IP_HOST)){
@@ -235,7 +242,7 @@ public class Parser {
 					//System.out.println(word);
 				}
 				if( word.matches(IP_HOST) ){
-					addLocation(word, Location.ACCESS_LIST, split[2]);
+					addLocation(word, Location.ACCESS_LIST, split[2], null);
 				}
 			}
 		}
@@ -244,14 +251,15 @@ public class Parser {
 		String[] split = line.split(SPACE);
 		NTP ntp = new NTP(split[2], Integer.valueOf(split[4]));
 		d.addNTP(ntp);
-		addLocation(split[2], Location.NTP_PEER, "Peer");
+		addLocation(split[2], Location.NTP_PEER, "Peer", f.getName().split("-")[0]);
 	}
 
-	private void addLocation(String target, int tab, String labelText){
+	private void addLocation(String target, int tab, String labelText, String group){
 		Location location = new Location();
 		location.setFileIndex(fileIndex);
 		location.setLineNumber(reader.getLineNumber());
 		location.setTab(tab);
+		location.setGroup(group);
 		Entry entry;
 		if(this.updateables.containsKey(target+labelText)){
 			entry = this.updateables.get(target+labelText);
