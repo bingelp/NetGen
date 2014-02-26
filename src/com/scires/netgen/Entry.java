@@ -4,6 +4,11 @@ import java.util.ArrayList;
 
 /**
  * Created by Justin on 2/25/14.
+ *
+ * <P>Contains target and replacement text along with {@link com.scires.netgen.Location } of the targets</P>
+ *
+ * @author Justin Robinson
+ * @version 0.0.3
  */
 public class Entry {
 	String target = null;
@@ -16,7 +21,5 @@ public class Entry {
 	}
 
 	public void setTarget(String target){this.target = target;}
-	public void setReplacement(String replacement) {this.replacement = replacement;}
 	public void setLabelText(String text){this.labelText = text;}
-	public void addLocation(Location location){this.locations.add(location);}
 }

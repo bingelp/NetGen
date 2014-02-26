@@ -2,6 +2,11 @@ package com.scires.netgen;
 
 /**
  * Created by Justin on 2/24/14.
+ *
+ * <P>Locations within the config files where text needs to be replaced</P>
+ *
+ * @author Justin Robinson
+ * @version 0.0.3
  */
 public class Location {
 	static int GLOBAL		= 0; //Domain name, name server, secret, username, pwd, vtp pwd, logging
@@ -15,12 +20,6 @@ public class Location {
 	public String group;
 
 	public Location(){}
-
-	public Location( int fileIndex, int lineNumber, int tab ){
-		this.fileIndex = fileIndex;
-		this.lineNumber = lineNumber;
-		this.tab = tab;
-	}
 
 	public void setFileIndex(int fileIndex){this.fileIndex = fileIndex;}
 	public void setLineNumber(int lineNumber){this.lineNumber = lineNumber;}

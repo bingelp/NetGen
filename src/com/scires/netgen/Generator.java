@@ -5,20 +5,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.LineNumberReader;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * Created by Justin on 2/21/14.
+ *
+ * <P>Generator for config files based on data from {@link com.scires.netgen.Parser}</P>
+ *
+ * @author Justin Robinson
+ * @version 0.0.3
  */
 public class Generator extends Thread{
 	private Map<String, Entry> updateables = null;
 	private Map<String, LabeledText> textFields = null;
 	private File directory = null;
-	private LineNumberReader reader = null;
-	private FileOutputStream writer = null;
 	private String[] files = null;
 
 	public Generator(Map<String, Entry> updateables , Map<String,LabeledText> textFields, File directory, String[] files){
@@ -39,6 +39,17 @@ public class Generator extends Thread{
 			dirExists = this.directory.mkdir();
 		}
 		if(dirExists){
+			for(Map.Entry<String, LabeledText> tf : this.textFields.entrySet()){
+				LabeledText lt = tf.getValue();
+				if( !lt.textField.getText().isEmpty()){
+					String key = tf.getKey();
+					Entry e = this.updateables.get(key);
+					e.replacement = lt.textField.getText();
+					updateables.put(key, e);
+					writeChange(e);
+				}
+			}
+			/*
 			Iterator it = this.textFields.entrySet().iterator();
 			while(it.hasNext()){
 				Map.Entry pair = (Map.Entry)it.next();
@@ -50,7 +61,7 @@ public class Generator extends Thread{
 					updateables.put(key, e);
 					writeChange(e);
 				}
-			}
+			}*/
 		}
 
 	}
@@ -59,7 +70,9 @@ public class Generator extends Thread{
 		if(generatedDirectory.exists()){
 			String[] files = generatedDirectory.list();
 			for(String file: files){
-				new File(generatedDirectory.getPath(), file).delete();
+				boolean result = new File(generatedDirectory.getPath(), file).delete();
+				if(!result)
+					System.out.println("Error deleting file");
 			}
 		}
 	}
@@ -76,6 +89,8 @@ public class Generator extends Thread{
 		String target = entry.target;
 		String replacement = entry.replacement;
 		String line;
+		LineNumberReader reader;
+		FileOutputStream writer;
 		for( Location l : entry.locations ){
 			int fileIndex = l.fileIndex;
 			int lineNumber = l.lineNumber;
@@ -86,34 +101,40 @@ public class Generator extends Thread{
 				//so we don't overwrite our work
 				File outFile = new File(outFilePath);
 				if (outFile.exists())
-					this.reader = new LineNumberReader(new FileReader(outFilePath));
+					reader = new LineNumberReader(new FileReader(outFilePath));
 				else
-					this.reader = new LineNumberReader(new FileReader(inFilePath));
+					reader = new LineNumberReader(new FileReader(inFilePath));
 
 				//Write to a tmp file
-				this.writer = new FileOutputStream(outFilePath+".tmp");
+				writer = new FileOutputStream(outFilePath+".tmp");
 
 				//skip lines leading up to the one we need to edit
 				for (int linesSkipped = 0; linesSkipped < lineNumber - 1; linesSkipped++)
-					this.writer.write((this.reader.readLine() + '\n').getBytes());
+					writer.write((reader.readLine() + '\n').getBytes());
 
 				//read in line
 				//replace old ip with new one
-				line = this.reader.readLine() + '\n';
+				line = reader.readLine() + '\n';
 				line = line.replace(target, replacement);
-				this.writer.write(line.getBytes());
-				while ((line = this.reader.readLine()) != null) {
-					this.writer.write((line + '\n').getBytes());
+				writer.write(line.getBytes());
+				while ((line = reader.readLine()) != null) {
+					writer.write((line + '\n').getBytes());
 				}
-				this.writer.flush();
-				this.writer.close();
-				this.reader.close();
+				writer.flush();
+				writer.close();
+				reader.close();
 
 				//rename tmp to txt
-				if (outFile.exists())
-					outFile.delete();
-				new File(outFilePath+".tmp").renameTo(outFile);
+				if (outFile.exists()){
+					boolean result = outFile.delete();
+					if(!result)
+						System.out.println("Error deleting file");
+				}
+				boolean result = new File(outFilePath+".tmp").renameTo(outFile);
+				if(!result)
+					System.out.println("Error renaming .tmp file");
 			} catch (Exception e) {
+				System.out.println(Parser.ERROR + e.getMessage());
 			}
 		}
 	}

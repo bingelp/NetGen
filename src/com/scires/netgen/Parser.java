@@ -1,20 +1,20 @@
 package com.scires.netgen;
 
-import java.awt.*;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 
 /**
  * Created by Justin on 2/19/14.
+ *
+ * <P>Takes directory from {@link com.scires.netgen.IPGUI } and parses config files for useful
+ * Cisco configuration data</P>
+ *
+ * @author Justin Robinson
+ * @version 0.0.3
  */
 public class Parser {
 	private static String SPACE = "\\s";
-	private static String IP_GENERIC = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}";
-	private static String IP_HOST = ".*192\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[1-9]{1,3}.*";
-	private static String PERMIT_DENY = "permit|deny";
 	public static String ERROR = "Error: ";
 	private static int BUFFER_SIZE = 1000;
 	private static String[] COMMAND_LIST =
@@ -32,7 +32,6 @@ public class Parser {
 					"ntp peer"
 			};
 	private File directory = null;
-	private File f = null;
 	private String fileName = null;
 	private String[] files = null;
 	private LineNumberReader reader = null;
@@ -54,7 +53,7 @@ public class Parser {
 		int command;
 		for ( String s : files){
 			try{
-				f = new File(this.directory + "\\" + s);
+				File f = new File(this.directory + "\\" + s);
 				fileName = f.getName().split("-")[0];
 				this.reader = new LineNumberReader(new FileReader(f));
 				while ((text = this.reader.readLine()) != null){
@@ -70,7 +69,7 @@ public class Parser {
 									break;
 							case 3: processCredentials(text);
 									break;
-							case 4: processKeyChain(text);
+							case 4: processKeyChain();
 									break;
 							case 5: processGlobal(text, "VTP Password");
 									break;
@@ -89,7 +88,7 @@ public class Parser {
 				}
 			} catch (Exception e){
 				System.out.println(ERROR + e.getMessage());
-			} finally {try{if (this.reader != null)this.reader.close();} catch (IOException e){}}
+			} finally {try{if (this.reader != null)this.reader.close();} catch (IOException e){System.out.println(ERROR + e.getMessage());}}
 			this.fileIndex++;
 		}
 	}
@@ -115,7 +114,8 @@ public class Parser {
 		addLocation(split[1], Location.GLOBAL, "Username", null);
 		addLocation(split[3], Location.GLOBAL, "Password", null);
 	}
-	private void processKeyChain(String line){
+	private void processKeyChain(){
+		String line;
 		String[] split;
 		String[] commands = {"key ", "key-string", "accept-lifetime", "send-lifetime"};
 		try{
@@ -128,7 +128,7 @@ public class Parser {
 				if(line.startsWith(commands[0])){
 					keyNumber = "key " + split[1];
 				}else if(line.startsWith(commands[1])){
-
+					keyNumber += split[1];
 				}else if(line.startsWith(commands[2]) || split[0].matches(commands[3])){
 					String labelText;
 					if(line.startsWith(commands[2]))
@@ -204,12 +204,15 @@ public class Parser {
 	}
 	private void processLogging(String line){
 			line = line.split(SPACE)[1];
+			final String IP_GENERIC = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}";
 			if(line.matches(IP_GENERIC))
 				addLocation(line, Location.GLOBAL, "Logging Server", null);
 	}
 	private void processAccessList(String line){
+		final String IP_HOST = ".*192\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[1-9]{1,3}.*";
 		if(line.matches(IP_HOST)){
 			String[] split = line.split(SPACE);
+			final String PERMIT_DENY = "permit|deny";
 			for ( String word : split){
 				if( word.matches(PERMIT_DENY) ){
 					//System.out.println(word);
@@ -222,7 +225,6 @@ public class Parser {
 	}
 	private void processNTP(String line){
 		String[] split = line.split(SPACE);
-		NTP ntp = new NTP(split[2], Integer.valueOf(split[4]));
 		addLocation(split[2], Location.NTP_PEER, "Peer", fileName);
 	}
 

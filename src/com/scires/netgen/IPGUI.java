@@ -1,23 +1,26 @@
 package com.scires.netgen;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * Created by Justin on 2/21/14.
+ *
+ * <P>Creates GUI for Cisco config editing based on data from {@link com.scires.netgen.Parser}, then generates
+ * changes using {@link com.scires.netgen.Generator}</P>
+ *
+ * @author Justin Robinson
+ * @version 0.0.3
  */
 public class IPGUI extends JFrame {
-	private JButton generateButton = null;
 	private Map<String, LabeledText> textFields;
 	private Map<String, PanelGroup> groups;
 	private ArrayList<JComponent> tabs = null;
@@ -55,7 +58,7 @@ public class IPGUI extends JFrame {
 		//Make tabs
 		tabs = new ArrayList<JComponent>();
 		for(Field f:Location.class.getDeclaredFields()){
-			if(f.getModifiers() == 8){
+			if(f.getModifiers() == Modifier.STATIC){
 				JComponent tab = new JPanel(false);
 				/*if(f.getName().matches("INTERFACE"))
 					tab.setLayout(new GridLayout(0, 2));
@@ -71,7 +74,7 @@ public class IPGUI extends JFrame {
 
 
 		//Make generate button
-		generateButton = new JButton("Generate");
+		JButton generateButton = new JButton("Generate");
 		generateButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -81,20 +84,16 @@ public class IPGUI extends JFrame {
 		});
 		//create fields based on config file
 		Map<String, Entry> updateables = p.getUpdateables();
-		Iterator it = updateables.entrySet().iterator();
-		while(it.hasNext()){
-			Map.Entry pair = (Map.Entry)it.next();
-			for(Location l : ((Entry) pair.getValue()).locations){
-				Entry e = (Entry)pair.getValue();
+		for (Entry e : updateables.values()){
+			for(Location l : e.locations)
 				addField(e.target, l.tab, e.labelText, l.group);
-			}
 		}
 		JScrollPane scrollPane = new JScrollPane(tabbedPane);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		this.add(scrollPane, BorderLayout.CENTER);
 		this.add(generateButton, BorderLayout.SOUTH);
 
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		this.pack();
 		this.setMinimumSize(new Dimension(600, 200));
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
