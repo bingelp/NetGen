@@ -61,17 +61,17 @@ public class Parser {
 					if(!isComment(text) && (command = getCommand(text)) != -1){
 
 						switch(command){
-							case 0: processGlobal(text, "Domain Name");
+							case 0: processGlobal(text, "Domain Name", null);
 									break;
-							case 1: processGlobal(text, "Name Server");
+							case 1: processGlobal(text, "Name Server", Entry.IP_HOST);
 									break;
-							case 2: processGlobal(text, "Secret");
+							case 2: processGlobal(text, "Secret", Entry.COC_PWD);
 									break;
 							case 3: processCredentials(text);
 									break;
 							case 4: processKeyChain();
 									break;
-							case 5: processGlobal(text, "VTP Password");
+							case 5: processGlobal(text, "VTP Password", null);
 									break;
 							case 6: processInterface(text);
 									break;
@@ -106,13 +106,13 @@ public class Parser {
 	private boolean isComment(String line){
 		boolean out = false; if (line.startsWith("!")){ out = true;} return out;}
 
-	private void processGlobal(String line, String labelText){
-		addLocation(line.split(SPACE)[2], Location.GLOBAL, labelText, null);
+	private void processGlobal(String line, String labelText, String regex){
+		addLocation(line.split(SPACE)[2], Location.GLOBAL, labelText, null, regex);
 	}
 	private void processCredentials(String line){
 		String[] split = line.split(SPACE);
-		addLocation(split[1], Location.GLOBAL, "Username", null);
-		addLocation(split[3], Location.GLOBAL, "Password", null);
+		addLocation(split[1], Location.GLOBAL, "Username", null, null);
+		addLocation(split[3], Location.GLOBAL, "Password", null, Entry.COC_PWD);
 	}
 	private void processKeyChain(){
 		String line;
@@ -128,14 +128,14 @@ public class Parser {
 				if(line.startsWith(commands[0])){
 					keyNumber = "key " + split[1];
 				}else if(line.startsWith(commands[1])){
-					keyNumber += split[1];
+					keyNumber += " - " +split[1];
 				}else if(line.startsWith(commands[2]) || split[0].matches(commands[3])){
 					String labelText;
 					if(line.startsWith(commands[2]))
 						labelText = commands[2];
 					else
 						labelText = commands[3];
-					addLocation(line.substring(line.indexOf(' ')+1, line.length()), Location.KEY_CHAIN, labelText, keyNumber);
+					addLocation(line.substring(line.indexOf(' ')+1, line.length()), Location.KEY_CHAIN, labelText, keyNumber, Entry.KEY_TIME);
 				}
 			}
 		}catch(Exception e){
@@ -159,7 +159,7 @@ public class Parser {
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					addLocation(split[2], Location.INTERFACE, name, fileName);
+					addLocation(split[2], Location.INTERFACE, name, fileName, Entry.IP_HOST);
 					addedInterface=true;
 				}
 			}
@@ -186,10 +186,10 @@ public class Parser {
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					addLocation(split[1],Location.ROUTER,commands[0],routerNumber);
+					addLocation(split[1],Location.ROUTER,commands[0],routerNumber, Entry.IP_GATEWAY);
 				}else if( line.startsWith(commands[1]) ){
 					String ip = split[split.length-1];
-					addLocation(ip, Location.ROUTER,commands[1],routerNumber);
+					addLocation(ip, Location.ROUTER,commands[1],routerNumber, Entry.IP_HOST);
 				}
 			}
 		} catch(Exception e){
@@ -204,31 +204,31 @@ public class Parser {
 	}
 	private void processLogging(String line){
 			line = line.split(SPACE)[1];
-			final String IP_GENERIC = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}";
-			if(line.matches(IP_GENERIC))
-				addLocation(line, Location.GLOBAL, "Logging Server", null);
+			if(line.matches(Entry.IP_GENERIC))
+				addLocation(line, Location.GLOBAL, "Logging Server", null, null);
 	}
 	private void processAccessList(String line){
-		final String IP_HOST = ".*192\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[1-9]{1,3}.*";
-		if(line.matches(IP_HOST)){
+		if(line.matches(Entry.IP_GENERIC_LINE)){
 			String[] split = line.split(SPACE);
 			//final String PERMIT_DENY = "permit|deny";
-			for ( String word : split){
+			for(int i=0; i<split.length; i++){
+				String word = split[i];
 /*				if( word.matches(PERMIT_DENY) ){
 					//System.out.println(word);
 				}*/
-				if( word.matches(IP_HOST) ){
-					addLocation(word, Location.ACCESS_LIST, split[2], null);
+				if( word.matches(Entry.IP_GENERIC) ){
+					addLocation(word, Location.ACCESS_LIST, split[2], fileName, Entry.IP_GENERIC);
+					i=split.length;
 				}
 			}
 		}
 	}
 	private void processNTP(String line){
 		String[] split = line.split(SPACE);
-		addLocation(split[2], Location.NTP_PEER, "Peer", fileName);
+		addLocation(split[2], Location.NTP_PEER, "Peer", fileName, null);
 	}
 
-	private void addLocation(String target, int tab, String labelText, String group){
+	private void addLocation(String target, int tab, String labelText, String group, String regex){
 		Location location = new Location();
 		location.setFileIndex(fileIndex);
 		location.setLineNumber(reader.getLineNumber());
@@ -242,6 +242,7 @@ public class Parser {
 			entry = new Entry();
 			entry.setTarget(target);
 			entry.setLabelText(labelText);
+			entry.setRegex(regex);
 			entry.locations.add(location);
 		}
 		this.updateables.put(target+labelText, entry);

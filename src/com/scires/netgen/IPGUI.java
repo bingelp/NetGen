@@ -24,6 +24,9 @@ public class IPGUI extends JFrame {
 	private Map<String, LabeledText> textFields;
 	private Map<String, PanelGroup> groups;
 	private ArrayList<JComponent> tabs = null;
+	public int[] badFields = null;
+	JTabbedPane tabbedPane = null;
+	JButton generateButton = null;
 	private Parser p = null;
 	private File directory = null;
 
@@ -31,10 +34,8 @@ public class IPGUI extends JFrame {
 		textFields = new HashMap<String, LabeledText>();
 		groups = new HashMap<String, PanelGroup>();
 		chooseDirectory();
-		//directory= new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
-		if(directory != null){
-			processDirectory();
-		}
+		//directory = new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
+		processDirectory();
 	}
 
 	private void chooseDirectory(){
@@ -50,31 +51,27 @@ public class IPGUI extends JFrame {
 		}
 	}
 	private void processDirectory(){
-		//Process the config files in the directory
 		p = new Parser(directory.getAbsolutePath());
 		p.processFiles();
-		//Make tabbed pane
-		JTabbedPane tabbedPane = new JTabbedPane();
-		//Make tabs
+		tabbedPane = new JTabbedPane();
+		//
+		// Make tabs from static variables in Location class
+		//
 		tabs = new ArrayList<JComponent>();
 		for(Field f:Location.class.getDeclaredFields()){
 			if(f.getModifiers() == Modifier.STATIC){
 				JComponent tab = new JPanel(false);
-				/*if(f.getName().matches("INTERFACE"))
-					tab.setLayout(new GridLayout(0, 2));
-				else*/
-					//tab.setLayout(new GridLayout(0, 1));
 					tab.setLayout(new BoxLayout(tab, BoxLayout.PAGE_AXIS));
 				tabs.add(tab);
 				tabbedPane.addTab(f.getName(), null, tabs.get(tabs.size()-1), f.getName());
+				tabbedPane.setBackgroundAt(tabbedPane.getTabCount()-1, LabeledText.COLOR_DEFAULT);
 			}
 		}
-		//Setup window
-		this.setTitle("NetGen");
-
-
-		//Make generate button
-		JButton generateButton = new JButton("Generate");
+		badFields = new int[tabs.size()];
+		//
+		// Make generate button
+		//
+		generateButton = new JButton("Generate");
 		generateButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -82,29 +79,41 @@ public class IPGUI extends JFrame {
 				g.run();
 			}
 		});
-		//create fields based on config file
+
+		//
+		// Create fields based on config file
+		//
 		Map<String, Entry> updateables = p.getUpdateables();
 		for (Entry e : updateables.values()){
 			for(Location l : e.locations)
-				addField(e.target, l.tab, e.labelText, l.group);
+				addField(e.target, l.tab, e.labelText, l.group, e.regex);
 		}
 		JScrollPane scrollPane = new JScrollPane(tabbedPane);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+		//
+		// Add everything to the frame
+		//
+		this.setTitle("NetGen");
 		this.add(scrollPane, BorderLayout.CENTER);
 		this.add(generateButton, BorderLayout.SOUTH);
 
 		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		this.pack();
 		this.setMinimumSize(new Dimension(600, 200));
+
+		//
+		// Center window
+		//
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 		this.setMaximumSize( new Dimension( 1200, new Double(gd.getDisplayMode().getHeight()*0.7).intValue() ) );
-		//this.setLocationRelativeTo(null);
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 		this.setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
+
 		this.setVisible(true);
 	}
 
-	private void addField(String target, int tab, String labelText, String group){
+	private void addField(String target, int tab, String labelText, String group, String regex){
 		//if there is a group associated, then add it to that group
 		PanelGroup p = null;
 		String groupKey = null;
@@ -124,16 +133,24 @@ public class IPGUI extends JFrame {
 		//If it belongs to a group add the text field to that group,
 		//If it does not belong to a group, add it straight to the tab
 		if(!textFields.containsKey(key)){
-			textFields.put(key, new LabeledText(15, target, labelText));
+			textFields.put(key, new LabeledText(15, target, labelText, regex));
 			if( group != null){
 				textFields.get(key).addTo(p.panel);
 				this.groups.put(groupKey, p);
 				this.tabs.set(tab, this.groups.get(groupKey).addTo(this.tabs.get(tab)));
 			}else{
-				textFields.put(key, new LabeledText(15, target, labelText));
 				this.tabs.set(tab, this.textFields.get(key).addTo(this.tabs.get(tab)));
 			}
 		}
+	}
+
+	public void hideGenerateButton(){
+		if(this.generateButton != null)
+		this.generateButton.setVisible(false);
+	}
+	public void showGenerateButton(){
+		if(this.generateButton != null)
+			this.generateButton.setVisible(true);
 	}
 
 	@Override

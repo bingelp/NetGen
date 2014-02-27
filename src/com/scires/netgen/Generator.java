@@ -41,7 +41,8 @@ public class Generator extends Thread{
 		if(dirExists){
 			for(Map.Entry<String, LabeledText> tf : this.textFields.entrySet()){
 				LabeledText lt = tf.getValue();
-				if( !lt.textField.getText().isEmpty()){
+				String text = lt.textField.getText().trim();
+				if( !text.isEmpty() && text.compareTo(lt.originalText) != 0){
 					String key = tf.getKey();
 					Entry e = this.updateables.get(key);
 					e.replacement = lt.textField.getText();
@@ -49,19 +50,6 @@ public class Generator extends Thread{
 					writeChange(e);
 				}
 			}
-			/*
-			Iterator it = this.textFields.entrySet().iterator();
-			while(it.hasNext()){
-				Map.Entry pair = (Map.Entry)it.next();
-				LabeledText lt = (LabeledText) pair.getValue();
-				if( !lt.textField.getText().isEmpty()){
-					String key = pair.getKey().toString();
-					Entry e = this.updateables.get(key);
-					e.replacement = lt.textField.getText();
-					updateables.put(key, e);
-					writeChange(e);
-				}
-			}*/
 		}
 
 	}
