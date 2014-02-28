@@ -209,16 +209,19 @@ public class Parser {
 	}
 	private void processAccessList(String line){
 		if(line.matches(Entry.IP_GENERIC_LINE)){
+			String group = fileName + " - " + reader.getLineNumber();
 			String[] split = line.split(SPACE);
 			//final String PERMIT_DENY = "permit|deny";
 			for(int i=0; i<split.length; i++){
 				String word = split[i];
-/*				if( word.matches(PERMIT_DENY) ){
-					//System.out.println(word);
-				}*/
+				//host
+				if( word.matches("host") ){
+					addLocation(split[++i], Location.ACCESS_LIST, split[2], group, Entry.IP_GENERIC);
+				}
+				//network and subnet
 				if( word.matches(Entry.IP_GENERIC) ){
-					addLocation(word, Location.ACCESS_LIST, split[2], fileName, Entry.IP_GENERIC);
-					i=split.length;
+					addLocation(word, Location.ACCESS_LIST, "network", group, Entry.IP_GENERIC);
+					addLocation(split[++i], Location.ACCESS_LIST, "subnet", group, Entry.IP_GENERIC);
 				}
 			}
 		}
