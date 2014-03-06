@@ -31,7 +31,8 @@ public class Parser {
 					"router",
 					"logging",
 					"access-list",
-					"ntp peer"
+					"ntp peer",
+					"hostname"
 			};
 	private File directory = null;
 	private String fileName = null;
@@ -53,17 +54,23 @@ public class Parser {
 		this.fileIndex = 0;
 		String text;
 		int command;
+		ProgressFrame progressFrame = new ProgressFrame(files.length, "Total", "File");
 		for ( String s : files){
 			try{
 				File f = new File(this.directory + "\\" + s);
 				fileName = f.getName().split("-")[0];
 				this.reader = new LineNumberReader(new FileReader(f));
+				this.reader.skip(Long.MAX_VALUE);
+				progressFrame.resetSecondary(this.reader.getLineNumber());
+				this.reader = new LineNumberReader(new FileReader(f));
+
 				while ((text = this.reader.readLine()) != null){
+					progressFrame.setSecondaryProgress(this.reader.getLineNumber());
 					text=text.trim();
 					if(!isComment(text) && (command = getCommand(text)) != -1){
 
 						switch(command){
-							case 0: processGlobal(text, "Domain Name", null);
+							case 0: processGlobal(text, "Domain Name", ElementPanel.NOT_BLANK);
 									break;
 							case 1: processGlobal(text, "Name Server", ElementPanel.IP_HOST);
 									break;
@@ -73,7 +80,7 @@ public class Parser {
 									break;
 							case 4: processKeyChain();
 									break;
-							case 5: processGlobal(text, "VTP Password", null);
+							case 5: processGlobal(text, "VTP Password", ElementPanel.NOT_BLANK);
 									break;
 							case 6: processInterface(text);
 									break;
@@ -85,6 +92,8 @@ public class Parser {
 									break;
 							case 10:processNTP(text);
 									break;
+							case 11:processHostName(text);
+									break;
 						}
 					}
 				}
@@ -92,7 +101,9 @@ public class Parser {
 				System.out.println("Command: " + fileIndex + "." + reader.getLineNumber() + " " + ERROR + e.getMessage());
 			} finally {try{if (this.reader != null)this.reader.close();} catch (IOException e){System.out.println(ERROR + e.getMessage());}}
 			this.fileIndex++;
+			progressFrame.secondaryComplete();
 		}
+		progressFrame.close();
 	}
 
 	private int getCommand(String line){
@@ -110,13 +121,13 @@ public class Parser {
 
 	private void processGlobal(String line, String labelText, String regex){
 		markElement(null, line.split(SPACE)[2], labelText, labelText, regex);
-		containerize(null, Location.GLOBAL);
+		containerize(null, ContainerPanel.GLOBAL);
 	}
 	private void processCredentials(String line){
 		String[] split = line.split(SPACE);
-		markElement(null, split[1], "Username", "Username", null);
+		markElement(null, split[1], "Username", "Username", ElementPanel.NOT_BLANK);
 		markElement(null, split[3], "Password", "Password", ElementPanel.COC_PWD);
-		containerize(null, Location.GLOBAL);
+		containerize(null, ContainerPanel.GLOBAL);
 	}
 	private void processKeyChain(){
 		String line;
@@ -150,7 +161,7 @@ public class Parser {
 					if(startDate != null && endDate != null){
 						markElement(new RouterDatePicker(), startDate, "Begin Life", "Start Life", ElementPanel.KEY_TIME);
 						markElement(new RouterDatePicker(), endDate, "End Life", "End Life", ElementPanel.KEY_TIME);
-						containerize(keyNumber, Location.KEY_CHAIN);
+						containerize(keyNumber, ContainerPanel.KEY_CHAIN);
 					}
 				}
 			}
@@ -183,7 +194,7 @@ public class Parser {
 			System.out.println("Interface: " + ERROR + e.getMessage());
 		} finally{
 			if( addedInterface ){
-				containerize(fileName, Location.INTERFACE);
+				containerize(fileName, ContainerPanel.INTERFACE);
 				try{
 					this.reader.reset();
 				} catch(Exception e){
@@ -209,7 +220,7 @@ public class Parser {
 					markElement(null, ip, commands[1], commands[1], ElementPanel.IP_HOST);
 				}
 			}
-			containerize(routerNumber, Location.ROUTER);
+			containerize(routerNumber, ContainerPanel.ROUTER);
 		} catch(Exception e){
 			System.out.println(ERROR + e.getMessage());
 		} finally{
@@ -224,7 +235,7 @@ public class Parser {
 			line = line.split(SPACE)[1];
 			if(line.matches(ElementPanel.IP_GENERIC)){
 				markElement(null, line, "Logging Server", "Logging Server", ElementPanel.IP_HOST);
-				containerize(null, Location.GLOBAL);
+				containerize(null, ContainerPanel.GLOBAL);
 			}
 	}
 	private void processAccessList(String line){
@@ -258,13 +269,17 @@ public class Parser {
 					markElement(null, split[i++], "wildcard", "wildcard" + reader.getLineNumber(), ElementPanel.IP_GENERIC);
 				}
 			}
-			containerize(fileName, Location.ACCESS_LIST);
+			containerize(fileName, ContainerPanel.ACCESS_LIST);
 		}
 	}
 	private void processNTP(String line){
 		String[] split = line.split(SPACE);
 		markElement(null, split[2], "Peer", "Peer" + split[2], ElementPanel.IP_GENERIC);
-		containerize(null, Location.NTP_PEER);
+		containerize(null, ContainerPanel.NTP_PEER);
+	}
+	private void processHostName(String line){
+		markElement(null, line.split(SPACE)[1], fileName, fileName, ElementPanel.NOT_BLANK);
+		containerize(null, ContainerPanel.HOST_NAME);
 	}
 
 
@@ -288,7 +303,6 @@ public class Parser {
 		this.cp.elements.put(type, ep);
 		this.cp.add(this.cp.elements.get(type));
 	}
-
 	private void containerize(String group, int tab){
 		String key = this.cp.elements.keySet().toString();
 		if ( group != null )

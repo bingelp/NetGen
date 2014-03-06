@@ -22,17 +22,27 @@ import java.util.Map;
  */
 public class IPGUI extends JFrame {
 	private Map<String, PanelGroup> groups;
-	private ArrayList<JPanel> tabs = null;
-	public int[] badFields = null;
-	JTabbedPane tabbedPane = null;
-	JButton generateButton = null;
-	private Parser p = null;
-	private File directory = null;
+	private ArrayList<JPanel> tabs			= null;
+	public int[] badFields					= null;
+	JTabbedPane tabbedPane					= null;
+	JButton generateButton					= null;
+	private Parser p						= null;
+	private File directory					= null;
+	private ActionListener generateAction	= null;
+	public static Color GREEN				= new Color(0, 255, 100);
 
 	public IPGUI(){
 		groups = new HashMap<String, PanelGroup>();
+		this.setTitle("NetGen");
 		chooseDirectory();
 		//directory = new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
+		generateAction = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Generator g = new Generator(p.containers, directory, p.getFiles());
+				g.run();
+			}
+		};
 		processDirectory();
 	}
 
@@ -56,10 +66,14 @@ public class IPGUI extends JFrame {
 		// Make tabs from static variables in Location class
 		//
 		tabs = new ArrayList<JPanel>();
-		for(Field f : Location.class.getDeclaredFields()){
+		for(Field f : ContainerPanel.class.getDeclaredFields()){
 			if(f.getModifiers() == Modifier.STATIC){
 				JPanel tab = new JPanel();
-				tab.setLayout(new BoxLayout(tab, BoxLayout.Y_AXIS));
+				if(f.getName().matches("INTERFACE"))
+					tab.setLayout(new GridLayout(0,3));
+				else
+					tab.setLayout(new BoxLayout(tab, BoxLayout.Y_AXIS));
+
 				JScrollPane scrollPane = new JScrollPane(tab);
 				tabs.add(tab);
 				tabbedPane.addTab(f.getName(), null, scrollPane, f.getName());
@@ -71,19 +85,12 @@ public class IPGUI extends JFrame {
 		//
 		// Make generate button
 		//
-		generateButton = new JButton("Generate");
-		generateButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				Generator g = new Generator(p.containers, directory, p.getFiles());
-				g.run();
-			}
-		});
+		generateButton = new JButton();
+		showGenerateButton();
 
 		//
 		// Add everything to the frame
 		//
-		this.setTitle("NetGen");
 		this.add(tabbedPane, BorderLayout.CENTER);
 		this.add(generateButton, BorderLayout.SOUTH);
 		for(ContainerPanel cp : p.containers.values()){
@@ -98,7 +105,6 @@ public class IPGUI extends JFrame {
 		// Center window
 		//
 		DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
-		//this.setMaximumSize( new Dimension( gd.getDisplayMode().getWidth()+100, new Double(gd.getDisplayMode().getHeight()*0.98).intValue() ) );
 		int width = new Double(dm.getWidth()*0.7).intValue();
 		int height = new Double(dm.getHeight()*0.8).intValue();
 		Dimension size = new Dimension(width, height);
@@ -113,12 +119,14 @@ public class IPGUI extends JFrame {
 	}
 
 	public void hideGenerateButton(){
-		if(this.generateButton != null)
-		this.generateButton.setVisible(false);
+		this.generateButton.setText("Fix errors before continuing");
+		this.generateButton.setBackground(ElementPanel.COLOR_ERROR);
+		this.generateButton.removeActionListener(generateAction);
 	}
 	public void showGenerateButton(){
-		if(this.generateButton != null)
-			this.generateButton.setVisible(true);
+		this.generateButton.setText("Generate");
+		this.generateButton.setBackground(GREEN);
+		this.generateButton.addActionListener(generateAction);
 	}
 
 	@Override
@@ -159,9 +167,12 @@ public class IPGUI extends JFrame {
 		this.pack();
 		if( pg != null)
 			pg.resize();
-		cp.resize();
-		for(Map.Entry<String, ElementPanel> epEntry : cp.elements.entrySet()){
-			epEntry.getValue().resize();
+
+		if(!cp.isResized()){
+			cp.resize();
+			for(Map.Entry<String, ElementPanel> epEntry : cp.elements.entrySet()){
+				epEntry.getValue().resize();
+			}
 		}
 	}
 }

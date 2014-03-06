@@ -16,9 +16,9 @@ import java.util.Map;
  * @version 0.0.5
  */
 public class Generator extends Thread{
-	private Map<String, ContainerPanel> containers = null;
-	private File directory = null;
-	private String[] files = null;
+	private Map<String, ContainerPanel> containers	= null;
+	private File directory							= null;
+	private String[] files							= null;
 
 	public Generator(Map<String, ContainerPanel> containers, File directory, String[] files){
 		this.containers = containers;
@@ -37,7 +37,6 @@ public class Generator extends Thread{
 			dirExists = this.directory.mkdir();
 		}
 		if(dirExists){
-
 			for(Map.Entry<String,ContainerPanel> cpEntry : this.containers.entrySet()){
 				ContainerPanel cp = cpEntry.getValue();
 				for(ElementPanel ep : cp.elements.values()){
@@ -45,7 +44,11 @@ public class Generator extends Thread{
 						String text = ep.getTextField().getText().trim();
 						if ( !text.isEmpty() && text.compareTo(ep.originalText) != 0){
 							ep.replacement = text;
-							writeChange(ep);
+							String newFileName = null;
+							if (cp.tab == ContainerPanel.HOST_NAME){
+								newFileName = ep.replacement;
+							}
+							writeChange(ep, newFileName);
 						}
 					}
 					else if( ep.isCheckBox() ){
@@ -55,7 +58,7 @@ public class Generator extends Thread{
 								ep.replacement = ep.trueText;
 							else
 								ep.replacement = ep.falseText;
-								writeChange(ep);
+								writeChange(ep, null);
 						}
 					}
 					else if( ep.isDate() ){
@@ -63,7 +66,7 @@ public class Generator extends Thread{
 						String replacement = rdp.getRouterTime();
 						if( !replacement.matches(ep.originalText) ){
 							ep.replacement = replacement;
-							writeChange(ep);
+							writeChange(ep, null);
 						}
 					}
 				}
@@ -91,7 +94,7 @@ public class Generator extends Thread{
 			}
 		}
 	}
-	private void writeChange( ElementPanel ep ){
+	private void writeChange( ElementPanel ep, String newFileName ){
 		String target = ep.target;
 		String replacement = ep.replacement;
 		String line;
@@ -101,7 +104,12 @@ public class Generator extends Thread{
 			int fileIndex = l.fileIndex;
 			int lineNumber = l.lineNumber;
 			try {
-				String outFilePath = this.directory.getAbsolutePath() + "\\" + this.files[fileIndex];
+				String outFileName;
+				if( newFileName != null )
+					outFileName = this.files[fileIndex].replace(ep.target, ep.replacement);
+				else
+					outFileName = this.files[fileIndex];
+				String outFilePath = this.directory.getAbsolutePath() + "\\" + outFileName;
 				String inFilePath = this.directory.getParentFile().getAbsolutePath() + "\\" + this.files[fileIndex];
 				//Reads in our generated file from a previous run if it exists,
 				//so we don't overwrite our work

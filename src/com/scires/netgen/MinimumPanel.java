@@ -12,6 +12,7 @@ import java.awt.*;
  * @version 0.0.5
  */
 public class MinimumPanel extends JPanel {
+	public boolean resized = false;
 
 	public MinimumPanel(){
 		this.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -22,5 +23,9 @@ public class MinimumPanel extends JPanel {
 		DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
 		minHeight.setSize(dm.getWidth(), minHeight.getHeight());
 		this.setMaximumSize(minHeight);
+	}
+
+	public boolean isResized(){
+		return resized;
 	}
 }

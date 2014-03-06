@@ -3,9 +3,7 @@ package com.scires.netgen;
 import org.jdesktop.swingx.JXDatePicker;
 
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
 /**
  * Created by Justin on 3/5/14.
@@ -22,18 +20,11 @@ public class RouterDatePicker extends JXDatePicker {
 
 	public RouterDatePicker(){
 		sdf = new SimpleDateFormat(ROUTER_DATE_FORMAT);
+		this.setFormats(ROUTER_DATE_FORMAT);
 	}
 
 	public String getRouterTime(){
-		String routerTime;
-		if( this.isInfinite() ){
-			return this.getEditor().getText();
-		}else{
-			Calendar cal = new GregorianCalendar();
-			cal.setTime(this.getDate());
-			routerTime = sdf.format(cal.getTime());
-		}
-		return routerTime;
+		return this.getEditor().getText();
 	}
 
 	public void makeTimeFromRouter(String routerTime){
@@ -51,9 +42,5 @@ public class RouterDatePicker extends JXDatePicker {
 				this.setDate(date);
 			}
 		}
-	}
-
-	public boolean isInfinite(){
-		return this.getEditor().getText().matches("infinite");
 	}
 }

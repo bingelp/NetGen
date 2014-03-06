@@ -43,6 +43,7 @@ public class ElementPanel extends MinimumPanel {
 			"(?=.*[A-Z].*[A-Z])" +
 			"(?=.*[!@#$%^;*()_+}{&\":;'?/><].*[!@#$%^;*()_+}{&\":;'?/><])" +
 			"(?!.*\\s).*$";
+	static String NOT_BLANK = ".{1,}$";
 
 	public ElementPanel(JComponent component, String labelText, Location location, String target, String regex){
 		this.label = new JLabel(labelText);

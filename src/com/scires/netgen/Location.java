@@ -9,13 +9,6 @@ package com.scires.netgen;
  * @version 0.0.3
  */
 public class Location {
-	static int GLOBAL		= 0; //Domain name, name server, secret, username, pwd, vtp pwd, logging
-	static int KEY_CHAIN	= 1;
-	static int INTERFACE	= 2;
-	static int ROUTER		= 3;
-	static int ACCESS_LIST	= 4;
-	static int NTP_PEER		= 5;
-
 	public int fileIndex, lineNumber;
 
 	public Location(){}
