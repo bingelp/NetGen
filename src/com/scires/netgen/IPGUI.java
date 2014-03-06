@@ -18,12 +18,11 @@ import java.util.Map;
  * changes using {@link com.scires.netgen.Generator}</P>
  *
  * @author Justin Robinson
- * @version 0.0.3
+ * @version 0.0.5
  */
 public class IPGUI extends JFrame {
-	private Map<String, LabeledText> textFields;
 	private Map<String, PanelGroup> groups;
-	private ArrayList<JComponent> tabs = null;
+	private ArrayList<JPanel> tabs = null;
 	public int[] badFields = null;
 	JTabbedPane tabbedPane = null;
 	JButton generateButton = null;
@@ -31,10 +30,10 @@ public class IPGUI extends JFrame {
 	private File directory = null;
 
 	public IPGUI(){
-		textFields = new HashMap<String, LabeledText>();
 		groups = new HashMap<String, PanelGroup>();
 		chooseDirectory();
 		//directory = new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
+		//directory = new File("C:\\Users\\Justin\\git\\NetGen");
 		processDirectory();
 	}
 
@@ -57,14 +56,15 @@ public class IPGUI extends JFrame {
 		//
 		// Make tabs from static variables in Location class
 		//
-		tabs = new ArrayList<JComponent>();
-		for(Field f:Location.class.getDeclaredFields()){
+		tabs = new ArrayList<JPanel>();
+		for(Field f : Location.class.getDeclaredFields()){
 			if(f.getModifiers() == Modifier.STATIC){
-				JComponent tab = new JPanel(false);
-					tab.setLayout(new BoxLayout(tab, BoxLayout.PAGE_AXIS));
+				JPanel tab = new JPanel();
+				tab.setLayout(new BoxLayout(tab, BoxLayout.Y_AXIS));
+				JScrollPane scrollPane = new JScrollPane(tab);
 				tabs.add(tab);
-				tabbedPane.addTab(f.getName(), null, tabs.get(tabs.size()-1), f.getName());
-				tabbedPane.setBackgroundAt(tabbedPane.getTabCount()-1, LabeledText.COLOR_DEFAULT);
+				tabbedPane.addTab(f.getName(), null, scrollPane, f.getName());
+				tabbedPane.setBackgroundAt(tabbedPane.getTabCount()-1, ElementPanel.COLOR_DEFAULT);
 			}
 		}
 		badFields = new int[tabs.size()];
@@ -75,28 +75,20 @@ public class IPGUI extends JFrame {
 		generateButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Generator g = new Generator(p.getUpdateables(), textFields, directory, p.getFiles());
+				Generator g = new Generator(p.containers, directory, p.getFiles());
 				g.run();
 			}
 		});
 
 		//
-		// Create fields based on config file
-		//
-		Map<String, Entry> updateables = p.getUpdateables();
-		for (Entry e : updateables.values()){
-			for(Location l : e.locations)
-				addField(e.target, l.tab, e.labelText, l.group, e.regex);
-		}
-		JScrollPane scrollPane = new JScrollPane(tabbedPane);
-		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-		//
 		// Add everything to the frame
 		//
 		this.setTitle("NetGen");
-		this.add(scrollPane, BorderLayout.CENTER);
+		this.add(tabbedPane, BorderLayout.CENTER);
 		this.add(generateButton, BorderLayout.SOUTH);
+		for(ContainerPanel cp : p.containers.values()){
+			addPanel(cp);
+		}
 
 		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		this.pack();
@@ -106,42 +98,13 @@ public class IPGUI extends JFrame {
 		// Center window
 		//
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-		this.setMaximumSize( new Dimension( 1200, new Double(gd.getDisplayMode().getHeight()*0.7).intValue() ) );
+		this.setMaximumSize( new Dimension( gd.getDisplayMode().getWidth()+100, new Double(gd.getDisplayMode().getHeight()*0.98).intValue() ) );
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 		this.setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
 
+
+		this.validate();
 		this.setVisible(true);
-	}
-
-	private void addField(String target, int tab, String labelText, String group, String regex){
-		//if there is a group associated, then add it to that group
-		PanelGroup p = null;
-		String groupKey = null;
-		String key = target+labelText;
-
-		//If we have a group specified, make a key
-		//find a the group if we have already created the group
-		//if the group isn't there, make a new one
-		if(group != null){
-			groupKey = group + tab;
-			if(!groups.containsKey(groupKey))
-				p = new PanelGroup(group);
-			else
-				p=groups.get(groupKey);
-		}
-		//If we don't have a textField for this entry, make a new one
-		//If it belongs to a group add the text field to that group,
-		//If it does not belong to a group, add it straight to the tab
-		if(!textFields.containsKey(key)){
-			textFields.put(key, new LabeledText(15, target, labelText, regex));
-			if( group != null){
-				textFields.get(key).addTo(p.panel);
-				this.groups.put(groupKey, p);
-				this.tabs.set(tab, this.groups.get(groupKey).addTo(this.tabs.get(tab)));
-			}else{
-				this.tabs.set(tab, this.textFields.get(key).addTo(this.tabs.get(tab)));
-			}
-		}
 	}
 
 	public void hideGenerateButton(){
@@ -168,5 +131,25 @@ public class IPGUI extends JFrame {
 			setVisible(true);
 		}
 		super.paint(g);
+	}
+	public void addPanel(ContainerPanel cp){
+		PanelGroup pg;
+		String groupKey;
+		JPanel tab = this.tabs.get(cp.tab);
+
+		if(cp.group != null){
+			groupKey = cp.group + cp.tab;
+			if(!groups.containsKey(groupKey))
+				pg = new PanelGroup(cp.group);
+			else
+				pg = groups.get(groupKey);
+			pg.add(cp);
+			this.groups.put(groupKey, pg);
+			tab.add(pg);
+		}else{
+			tab.add(cp);
+		}
+
+		this.tabs.set(cp.tab, tab);
 	}
 }

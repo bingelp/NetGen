@@ -1,8 +1,10 @@
 package com.scires.netgen;
 
+import javax.swing.*;
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Justin on 2/19/14.
@@ -11,10 +13,10 @@ import java.util.Map;
  * Cisco configuration data</P>
  *
  * @author Justin Robinson
- * @version 0.0.3
+ * @version 0.0.5
  */
 public class Parser {
-	private static String SPACE = "\\s";
+	public static String SPACE = "\\s";
 	public static String ERROR = "Error: ";
 	private static int BUFFER_SIZE = 1000;
 	private static String[] COMMAND_LIST =
@@ -36,16 +38,16 @@ public class Parser {
 	private String[] files = null;
 	private LineNumberReader reader = null;
 	private int fileIndex = 0;
-	private Map<String, Entry> updateables = null;
+	public Map<String, ContainerPanel> containers = null;
+	public ContainerPanel cp = null;
 
 	public Parser(String d){
 		this.directory = new File(d);
 		this.files = directory.list();
-		this.updateables = new HashMap<String, Entry>();
+		this.containers = new HashMap<String, ContainerPanel>();
 	}
 
 	public String[] getFiles(){ return this.files; }
-	public Map<String, Entry> getUpdateables(){return this.updateables;}
 
 	public void processFiles(){
 		this.fileIndex = 0;
@@ -63,9 +65,9 @@ public class Parser {
 						switch(command){
 							case 0: processGlobal(text, "Domain Name", null);
 									break;
-							case 1: processGlobal(text, "Name Server", Entry.IP_HOST);
+							case 1: processGlobal(text, "Name Server", ElementPanel.IP_HOST);
 									break;
-							case 2: processGlobal(text, "Secret", Entry.COC_PWD);
+							case 2: processGlobal(text, "Secret", ElementPanel.COC_PWD);
 									break;
 							case 3: processCredentials(text);
 									break;
@@ -87,7 +89,7 @@ public class Parser {
 					}
 				}
 			} catch (Exception e){
-				System.out.println(ERROR + e.getMessage());
+				System.out.println("Command: " + fileIndex + "." + reader.getLineNumber() + " " + ERROR + e.getMessage());
 			} finally {try{if (this.reader != null)this.reader.close();} catch (IOException e){System.out.println(ERROR + e.getMessage());}}
 			this.fileIndex++;
 		}
@@ -107,12 +109,14 @@ public class Parser {
 		boolean out = false; if (line.startsWith("!")){ out = true;} return out;}
 
 	private void processGlobal(String line, String labelText, String regex){
-		addLocation(line.split(SPACE)[2], Location.GLOBAL, labelText, null, regex);
+		markElement(null, line.split(SPACE)[2], labelText, labelText, regex);
+		containerize(null, Location.GLOBAL);
 	}
 	private void processCredentials(String line){
 		String[] split = line.split(SPACE);
-		addLocation(split[1], Location.GLOBAL, "Username", null, null);
-		addLocation(split[3], Location.GLOBAL, "Password", null, Entry.COC_PWD);
+		markElement(null, split[1], "Username", "Username", null);
+		markElement(null, split[3], "Password", "Password", ElementPanel.COC_PWD);
+		containerize(null, Location.GLOBAL);
 	}
 	private void processKeyChain(){
 		String line;
@@ -125,26 +129,38 @@ public class Parser {
 				line = line.trim();
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
+				//key
 				if(line.startsWith(commands[0])){
 					keyNumber = "key " + split[1];
+				//key-string
 				}else if(line.startsWith(commands[1])){
 					keyNumber += " - " +split[1];
+				//accept-lifetime  send-lifetime
 				}else if(line.startsWith(commands[2]) || split[0].matches(commands[3])){
-					String labelText;
-					if(line.startsWith(commands[2]))
-						labelText = commands[2];
-					else
-						labelText = commands[3];
-					addLocation(line.substring(line.indexOf(' ')+1, line.length()), Location.KEY_CHAIN, labelText, keyNumber, Entry.KEY_TIME);
+					//parse out the start and end times
+					Matcher m = Pattern.compile(ElementPanel.KEY_TIME)
+							.matcher(line);
+					String startDate=null, endDate=null;
+					if( m.find() ){
+						startDate = m.group();}
+					if ( m.find() ){
+						endDate = m.group();}
+
+					//make gui elements for both fields
+					if(startDate != null && endDate != null){
+						markElement(new RouterDatePicker(), startDate, "Begin Life", "Start Life", ElementPanel.KEY_TIME);
+						markElement(new RouterDatePicker(), endDate, "End Life", "End Life", ElementPanel.KEY_TIME);
+						containerize(keyNumber, Location.KEY_CHAIN);
+					}
 				}
 			}
 		}catch(Exception e){
-			System.out.println(ERROR + e.getMessage());
+			System.out.println("KeyChain Read:" + ERROR + e.getMessage());
 		}finally {
 			try{
 				this.reader.reset();
 			}catch(Exception e){
-				System.out.println(ERROR + e.getMessage());
+				System.out.println("KeyChain Reader Reset:" + ERROR + e.getMessage());
 			}
 		}
 	}
@@ -159,18 +175,19 @@ public class Parser {
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					addLocation(split[2], Location.INTERFACE, name, fileName, Entry.IP_HOST);
+					markElement(null, split[2], name, name, ElementPanel.IP_HOST);
 					addedInterface=true;
 				}
 			}
 		} catch(Exception e){
-			System.out.println(ERROR + e.getMessage());
+			System.out.println("Interface: " + ERROR + e.getMessage());
 		} finally{
 			if( addedInterface ){
+				containerize(fileName, Location.INTERFACE);
 				try{
 					this.reader.reset();
 				} catch(Exception e){
-					System.out.println(ERROR + e.getMessage());
+					System.out.println("Interface: Reset: " + ERROR + e.getMessage());
 				}
 			}
 		}
@@ -186,12 +203,13 @@ public class Parser {
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					addLocation(split[1],Location.ROUTER,commands[0],routerNumber, Entry.IP_GATEWAY);
+					markElement(null, split[1],commands[0],commands[0]+split[1],ElementPanel.IP_GATEWAY);
 				}else if( line.startsWith(commands[1]) ){
 					String ip = split[split.length-1];
-					addLocation(ip, Location.ROUTER,commands[1],routerNumber, Entry.IP_HOST);
+					markElement(null, ip, commands[1], commands[1], ElementPanel.IP_HOST);
 				}
 			}
+			containerize(routerNumber, Location.ROUTER);
 		} catch(Exception e){
 			System.out.println(ERROR + e.getMessage());
 		} finally{
@@ -204,51 +222,93 @@ public class Parser {
 	}
 	private void processLogging(String line){
 			line = line.split(SPACE)[1];
-			if(line.matches(Entry.IP_GENERIC))
-				addLocation(line, Location.GLOBAL, "Logging Server", null, null);
+			if(line.matches(ElementPanel.IP_GENERIC)){
+				markElement(null, line, "Logging Server", "Logging Server", ElementPanel.IP_HOST);
+				containerize(null, Location.GLOBAL);
+			}
 	}
 	private void processAccessList(String line){
-		if(line.matches(Entry.IP_GENERIC_LINE)){
-			String group = fileName + " - " + reader.getLineNumber();
+		if(line.matches(ElementPanel.IP_GENERIC_LINE)){
 			String[] split = line.split(SPACE);
-			//final String PERMIT_DENY = "permit|deny";
+			final String permit = "permit";
+			final String deny	= "deny";
+			final String PERMIT_DENY = permit + "|" + deny;
 			for(int i=0; i<split.length; i++){
 				String word = split[i];
 				//host
-				if( word.matches("host") ){
-					addLocation(split[++i], Location.ACCESS_LIST, split[2], group, Entry.IP_GENERIC);
+				if( word.matches(PERMIT_DENY) ){
+					boolean checked;
+					String target;
+					if(word.matches(permit)){
+						checked=true;
+						target=permit;
+					}
+					else{
+						checked=false;
+						target=deny;
+					}
+					markElement(new JCheckBox("", checked), target, null, PERMIT_DENY, null);
+				}
+				else if( word.matches("host") ){
+					markElement(null, split[++i], "host", "host" + reader.getLineNumber(), ElementPanel.IP_GENERIC);
 				}
 				//network and subnet
-				if( word.matches(Entry.IP_GENERIC) ){
-					addLocation(word, Location.ACCESS_LIST, "network", group, Entry.IP_GENERIC);
-					addLocation(split[++i], Location.ACCESS_LIST, "subnet", group, Entry.IP_GENERIC);
+				else if( word.matches(ElementPanel.IP_GENERIC) ){
+					markElement(null, word, "network", "network" + reader.getLineNumber(), ElementPanel.IP_GENERIC);
+					markElement(null, split[i++], "wildcard", "wildcard" + reader.getLineNumber(), ElementPanel.IP_GENERIC);
 				}
 			}
+			containerize(fileName, Location.ACCESS_LIST);
 		}
 	}
 	private void processNTP(String line){
 		String[] split = line.split(SPACE);
-		addLocation(split[2], Location.NTP_PEER, "Peer", fileName, null);
+		markElement(null, split[2], "Peer", "Peer" + split[2], ElementPanel.IP_GENERIC);
+		containerize(null, Location.NTP_PEER);
 	}
 
-	private void addLocation(String target, int tab, String labelText, String group, String regex){
-		Location location = new Location();
-		location.setFileIndex(fileIndex);
-		location.setLineNumber(reader.getLineNumber());
-		location.setTab(tab);
-		location.setGroup(group);
-		Entry entry;
-		if(this.updateables.containsKey(target+labelText)){
-			entry = this.updateables.get(target+labelText);
-			entry.locations.add(location);
-		}else{
-			entry = new Entry();
-			entry.setTarget(target);
-			entry.setLabelText(labelText);
-			entry.setRegex(regex);
-			entry.locations.add(location);
+
+	private void markElement(JComponent component, String target, String labelText, String type, String regex){
+		if(component == null)
+			component = new JTextField(15);
+		Location l = new Location();
+		l.setFileIndex(fileIndex);
+		l.setLineNumber(reader.getLineNumber());
+		ElementPanel ep = new ElementPanel(component, labelText, l, target, regex);
+		if(ep.isText()){
+			JTextField tf = (JTextField)ep.component;
+			tf.setText(target);
 		}
-		this.updateables.put(target+labelText, entry);
+		else if( ep.isDate() ){
+			RouterDatePicker rdp = (RouterDatePicker)ep.component;
+			rdp.makeTimeFromRouter(target);
+		}
+		if(this.cp == null)
+			this.cp = new ContainerPanel();
+		this.cp.elements.put(type, ep);
+		this.cp.add(this.cp.elements.get(type));
+	}
+
+	private void containerize(String group, int tab){
+		String key = this.cp.elements.keySet().toString();
+		if ( group != null )
+			key += group;
+		cp.group = group;
+		cp.tab = tab;
+		if(!this.containers.containsKey(key))
+			this.containers.put(key, this.cp);
+		else{
+			ContainerPanel storedCP = this.containers.get(key);
+			for(Map.Entry<String, ElementPanel> elementPanelEntry: cp.elements.entrySet()){
+				String elementKey = elementPanelEntry.getKey();
+				Location l = elementPanelEntry.getValue().locations.get(0);
+				storedCP.elements.get(elementKey).locations.add(l);
+			}
+		}
+
+		this.cp.make();
+
+		this.cp=null;
 	}
 
 }

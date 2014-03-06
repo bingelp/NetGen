@@ -13,17 +13,15 @@ import java.util.Map;
  * <P>Generator for config files based on data from {@link com.scires.netgen.Parser}</P>
  *
  * @author Justin Robinson
- * @version 0.0.3
+ * @version 0.0.5
  */
 public class Generator extends Thread{
-	private Map<String, Entry> updateables = null;
-	private Map<String, LabeledText> textFields = null;
+	private Map<String, ContainerPanel> containers = null;
 	private File directory = null;
 	private String[] files = null;
 
-	public Generator(Map<String, Entry> updateables , Map<String,LabeledText> textFields, File directory, String[] files){
-		this.updateables = updateables;
-		this.textFields = textFields;
+	public Generator(Map<String, ContainerPanel> containers, File directory, String[] files){
+		this.containers = containers;
 		this.directory = new File(directory.getAbsolutePath() + "\\Generated");
 		this.files = files;
 	}
@@ -39,15 +37,35 @@ public class Generator extends Thread{
 			dirExists = this.directory.mkdir();
 		}
 		if(dirExists){
-			for(Map.Entry<String, LabeledText> tf : this.textFields.entrySet()){
-				LabeledText lt = tf.getValue();
-				String text = lt.textField.getText().trim();
-				if( !text.isEmpty() && text.compareTo(lt.originalText) != 0){
-					String key = tf.getKey();
-					Entry e = this.updateables.get(key);
-					e.replacement = lt.textField.getText();
-					updateables.put(key, e);
-					writeChange(e);
+
+			for(Map.Entry<String,ContainerPanel> cpEntry : this.containers.entrySet()){
+				ContainerPanel cp = cpEntry.getValue();
+				for(ElementPanel ep : cp.elements.values()){
+					if(ep.isText()){
+						String text = ep.getTextField().getText().trim();
+						if ( !text.isEmpty() && text.compareTo(ep.originalText) != 0){
+							ep.replacement = text;
+							writeChange(ep);
+						}
+					}
+					else if( ep.isCheckBox() ){
+						boolean checked = ep.getCheckBox().isSelected();
+						if ( checked != ep.originalState ){
+							if ( checked )
+								ep.replacement = ep.trueText;
+							else
+								ep.replacement = ep.falseText;
+								writeChange(ep);
+						}
+					}
+					else if( ep.isDate() ){
+						RouterDatePicker rdp = ep.getDatePicker();
+						String replacement = rdp.getRouterTime();
+						if( !replacement.matches(ep.originalText) ){
+							ep.replacement = replacement;
+							writeChange(ep);
+						}
+					}
 				}
 			}
 		}
@@ -73,13 +91,13 @@ public class Generator extends Thread{
 			}
 		}
 	}
-	private void writeChange( Entry entry ){
-		String target = entry.target;
-		String replacement = entry.replacement;
+	private void writeChange( ElementPanel ep ){
+		String target = ep.target;
+		String replacement = ep.replacement;
 		String line;
 		LineNumberReader reader;
 		FileOutputStream writer;
-		for( Location l : entry.locations ){
+		for( Location l : ep.locations ){
 			int fileIndex = l.fileIndex;
 			int lineNumber = l.lineNumber;
 			try {
