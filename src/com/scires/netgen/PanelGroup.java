@@ -11,7 +11,7 @@ import java.awt.*;
  * @author Justin Robinson
  * @version 0.0.5
  */
-public class PanelGroup extends JPanel{
+public class PanelGroup extends MinimumPanel{
 	public PanelGroup(String groupKey){
 		TitledBorder title = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK), groupKey);
 		title.setTitleJustification(TitledBorder.LEFT);

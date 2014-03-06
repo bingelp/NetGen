@@ -33,7 +33,6 @@ public class IPGUI extends JFrame {
 		groups = new HashMap<String, PanelGroup>();
 		chooseDirectory();
 		//directory = new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
-		//directory = new File("C:\\Users\\Justin\\git\\NetGen");
 		processDirectory();
 	}
 
@@ -68,6 +67,7 @@ public class IPGUI extends JFrame {
 			}
 		}
 		badFields = new int[tabs.size()];
+
 		//
 		// Make generate button
 		//
@@ -97,8 +97,13 @@ public class IPGUI extends JFrame {
 		//
 		// Center window
 		//
-		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-		this.setMaximumSize( new Dimension( gd.getDisplayMode().getWidth()+100, new Double(gd.getDisplayMode().getHeight()*0.98).intValue() ) );
+		DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
+		//this.setMaximumSize( new Dimension( gd.getDisplayMode().getWidth()+100, new Double(gd.getDisplayMode().getHeight()*0.98).intValue() ) );
+		int width = new Double(dm.getWidth()*0.7).intValue();
+		int height = new Double(dm.getHeight()*0.8).intValue();
+		Dimension size = new Dimension(width, height);
+		this.setPreferredSize(size);
+		this.setSize(size);
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 		this.setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
 
@@ -133,7 +138,7 @@ public class IPGUI extends JFrame {
 		super.paint(g);
 	}
 	public void addPanel(ContainerPanel cp){
-		PanelGroup pg;
+		PanelGroup pg = null;
 		String groupKey;
 		JPanel tab = this.tabs.get(cp.tab);
 
@@ -151,5 +156,12 @@ public class IPGUI extends JFrame {
 		}
 
 		this.tabs.set(cp.tab, tab);
+		this.pack();
+		if( pg != null)
+			pg.resize();
+		cp.resize();
+		for(Map.Entry<String, ElementPanel> epEntry : cp.elements.entrySet()){
+			epEntry.getValue().resize();
+		}
 	}
 }

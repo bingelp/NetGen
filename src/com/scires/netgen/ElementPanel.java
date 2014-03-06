@@ -12,7 +12,7 @@ import java.util.ArrayList;
  * <P>Single Element that replaces one string with another.  Contains multiple @{link Location}s defining
  * where the target string is</P>
  */
-public class ElementPanel extends JPanel {
+public class ElementPanel extends MinimumPanel {
 	public JLabel label 					= null;
 	public JComponent component				= null;
 	public ArrayList<Location> locations	= null;
@@ -23,7 +23,6 @@ public class ElementPanel extends JPanel {
 	public boolean originalState				  ;
 	public String trueText					= null;
 	public String falseText					= null;
-	//public static int MAX_HEIGHT			= 30;
 	public final static Color COLOR_ERROR = new Color(255, 75, 75);
 	public final static Color COLOR_DEFAULT = new Color(150, 200, 255);
 	private static String THREE_IP_OCTETS =
@@ -83,8 +82,6 @@ public class ElementPanel extends JPanel {
 	}
 
 	public void make(){
-		this.setLayout(new FlowLayout(FlowLayout.LEFT));
-		//this.setMaximumSize(new Dimension(1200, MAX_HEIGHT));
 		if(this.label != null)
 			this.add(this.label);
 		this.add(this.component);

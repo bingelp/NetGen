@@ -306,8 +306,6 @@ public class Parser {
 			}
 		}
 
-		this.cp.make();
-
 		this.cp=null;
 	}
 
