@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -14,8 +16,8 @@ import java.util.Map;
 /**
  * Created by Justin on 2/21/14.
  *
- * <P>Creates GUI for Cisco config editing based on data from {@link com.scires.netgen.Parser}, then generates
- * changes using {@link com.scires.netgen.Generator}</P>
+ * <P>Creates GUI for Cisco config editing based on data from {@link com.scires.netgen.ParserWorker}, then generates
+ * changes using {@link com.scires.netgen.GeneratorWorker}</P>
  *
  * @author Justin Robinson
  * @version 0.0.5
@@ -26,79 +28,50 @@ public class IPGUI extends JFrame {
 	public int[] badFields					= null;
 	JTabbedPane tabbedPane					= null;
 	JButton generateButton					= null;
-	private Parser p						= null;
-	private File directory					= null;
+	private ParserWorker parserWorker		= null;
+	private GeneratorWorker generatorWorker	= null;
+	public Map<String, ContainerPanel> containers = null;
+	private String[] files					= null;
+	private ProgressFrame progressFrame		= null;
+	public File directory					= null;
 	private ActionListener generateAction	= null;
 	public static Color GREEN				= new Color(0, 255, 100);
 
 	public IPGUI(){
-		groups = new HashMap<String, PanelGroup>();
+		groups = new HashMap<>();
 		this.setTitle("NetGen");
-		chooseDirectory();
-		//directory = new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
+		directory = new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
 		generateAction = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Generator g = new Generator(p.containers, directory, p.getFiles());
-				g.run();
+				progressFrame.reset(containers.size());
+				generatorWorker = new GeneratorWorker(containers, directory, files, progressFrame);
+				generatorWorker.addPropertyChangeListener(new PropertyChangeListener() {
+					@Override
+					public void propertyChange(PropertyChangeEvent event) {
+						switch (event.getPropertyName()) {
+							case "progress":
+
+							case "state":
+								switch ((SwingWorker.StateValue) event.getNewValue()) {
+									case DONE:
+										progressFrame.setVisible(false);
+										generatorWorker = null;
+										openDirectory();
+										break;
+									case STARTED:
+										progressFrame.setVisible(true);
+									case PENDING:
+										break;
+								}
+								break;
+						}
+					}
+				});
+				generatorWorker.execute();
 			}
 		};
-		processDirectory();
-	}
-
-	private void chooseDirectory(){
-		JFileChooser chooser = new JFileChooser();
-		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		chooser.setCurrentDirectory(new File("."));
-		chooser.setDialogTitle("Select root folder containing config files");
-		chooser.setAcceptAllFileFilterUsed(false);
-		if(chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
-			directory = chooser.getSelectedFile();
-		}else{
-			System.out.println("No directory chosen");
-		}
-	}
-	private void processDirectory(){
-		p = new Parser(directory.getAbsolutePath());
-		p.processFiles();
-		tabbedPane = new JTabbedPane();
-		//
-		// Make tabs from static variables in Location class
-		//
-		tabs = new ArrayList<JPanel>();
-		for(Field f : ContainerPanel.class.getDeclaredFields()){
-			if(f.getModifiers() == Modifier.STATIC){
-				JPanel tab = new JPanel();
-				if(f.getName().matches("INTERFACE"))
-					tab.setLayout(new GridLayout(0,3));
-				else
-					tab.setLayout(new BoxLayout(tab, BoxLayout.Y_AXIS));
-
-				JScrollPane scrollPane = new JScrollPane(tab);
-				tabs.add(tab);
-				tabbedPane.addTab(f.getName(), null, scrollPane, f.getName());
-				tabbedPane.setBackgroundAt(tabbedPane.getTabCount()-1, ElementPanel.COLOR_DEFAULT);
-			}
-		}
-		badFields = new int[tabs.size()];
-
-		//
-		// Make generate button
-		//
-		generateButton = new JButton();
-		showGenerateButton();
-
-		//
-		// Add everything to the frame
-		//
-		this.add(tabbedPane, BorderLayout.CENTER);
-		this.add(generateButton, BorderLayout.SOUTH);
-		for(ContainerPanel cp : p.containers.values()){
-			addPanel(cp);
-		}
-
-		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		this.pack();
+		this.add(new MenuBar(), BorderLayout.NORTH);
 		this.setMinimumSize(new Dimension(600, 200));
 
 		//
@@ -113,9 +86,62 @@ public class IPGUI extends JFrame {
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 		this.setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
 
-
+		this.pack();
 		this.validate();
+		this.setAlwaysOnTop(false);
 		this.setVisible(true);
+		//processDirectory();
+	}
+
+	public void processDirectory(){
+		if(progressFrame == null)
+			progressFrame = new ProgressFrame(0, "Total");
+
+		parserWorker = new ParserWorker(directory.getAbsolutePath(), progressFrame);
+		parserWorker.addPropertyChangeListener(new PropertyChangeListener() {
+			@Override
+			public void propertyChange(PropertyChangeEvent event) {
+				switch (event.getPropertyName()) {
+					case "progress":
+
+					case "state":
+						switch ((SwingWorker.StateValue) event.getNewValue()) {
+							case DONE:
+								initTabs();
+								containers = parserWorker.containers;
+								files = parserWorker.files;
+								for (ContainerPanel cp : containers.values()) {
+									addPanel(cp);
+								}
+								generateButton.setVisible(true);
+								progressFrame.setVisible(false);
+								parserWorker = null;
+								break;
+							case STARTED:
+								progressFrame.setVisible(true);
+							case PENDING:
+								break;
+						}
+						break;
+				}
+			}
+		});
+		parserWorker.execute();
+
+		//
+		// Make generate button
+		//
+		generateButton = new JButton();
+		showGenerateButton();
+		generateButton.setVisible(false);
+
+		//
+		// Add everything to the frame
+		//
+		this.add(generateButton, BorderLayout.SOUTH);
+
+		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		this.pack();
 	}
 
 	public void hideGenerateButton(){
@@ -172,6 +198,40 @@ public class IPGUI extends JFrame {
 			cp.resize();
 			for(Map.Entry<String, ElementPanel> epEntry : cp.elements.entrySet()){
 				epEntry.getValue().resize();
+			}
+		}
+	}
+	private void initTabs(){
+		if(tabbedPane != null)
+			this.remove(tabbedPane);
+		tabbedPane = new JTabbedPane();
+		this.add(tabbedPane, BorderLayout.CENTER);
+		tabs = new ArrayList<>();
+		for(Field f : ContainerPanel.class.getDeclaredFields()){
+			if(f.getModifiers() == Modifier.STATIC){
+				JPanel tab = new JPanel();
+				if(f.getName().matches("INTERFACE"))
+					tab.setLayout(new GridLayout(0,3));
+				else
+					tab.setLayout(new BoxLayout(tab, BoxLayout.Y_AXIS));
+
+				JScrollPane scrollPane = new JScrollPane(tab);
+				tabs.add(tab);
+				tabbedPane.addTab(f.getName(), null, scrollPane, f.getName());
+				tabbedPane.setBackgroundAt(tabbedPane.getTabCount()-1, ElementPanel.COLOR_DEFAULT);
+			}
+		}
+		badFields = new int[tabs.size()];
+	}
+
+
+	private void openDirectory(){
+		if(Desktop.isDesktopSupported()){
+			File generatedDirectory = new File(this.directory.getAbsolutePath() + "\\Generated");
+			try{
+				Desktop.getDesktop().open(generatedDirectory);
+			}catch (Exception e){
+				System.out.println(ParserWorker.ERROR + e.getMessage());
 			}
 		}
 	}
