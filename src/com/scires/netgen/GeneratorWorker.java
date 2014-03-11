@@ -14,19 +14,21 @@ import java.util.List;
  * <P>Generator for config files based on data from {@link com.scires.netgen.ParserWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.5
+ * @version 0.0.6
  */
 public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 	private Map<String, ContainerPanel> containers	= null;
 	private File directory							= null;
 	private String[] files							= null;
-	ProgressFrame progressFrame;
-
-	public GeneratorWorker(Map<String, ContainerPanel> containers, File directory, String[] files, ProgressFrame progressFrame){
+	ProgressWindow progressWindow;
+	private static String TAG						= "GeneratorWorker";
+	public GeneratorWorker(Map<String, ContainerPanel> containers, File directory, String[] files, ProgressWindow progressWindow){
 		this.containers = containers;
+		if(directory.isFile())
+			directory = directory.getParentFile();
 		this.directory = new File(directory.getAbsolutePath() + "\\Generated");
 		this.files = files;
-		this.progressFrame = progressFrame;
+		this.progressWindow = progressWindow;
 
 	}
 
@@ -38,7 +40,7 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 
 	@Override
 	protected void process(final List<Integer> integers){
-		progressFrame.incrementProgress(integers.size());
+		progressWindow.incrementProgress(integers.size());
 	}
 	private void generate(){
 		boolean dirExists = true;
@@ -116,7 +118,7 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 					writer.write((reader.readLine() + '\n').getBytes());
 
 				//read in line
-				//replace old ip with new one
+				//replace target text with replacement
 				line = reader.readLine() + '\n';
 				line = line.replace(target, replacement);
 				writer.write(line.getBytes());
@@ -137,8 +139,12 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 				if(!result)
 					System.out.println("Error renaming .tmp file");
 			} catch (Exception e) {
-				System.out.println(ParserWorker.ERROR + e.getMessage());
+				System.out.println(TAG + " " + ParserWorker.ERROR + e.getMessage());
 			}
 		}
+		// we need to update the target text with our replacement so we can do multiple runs
+		// without having the reparse the file(s)
+		ep.target = ep.replacement;
+		ep.originalText = ep.target;
 	}
 }

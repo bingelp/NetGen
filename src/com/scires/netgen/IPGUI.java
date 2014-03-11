@@ -20,7 +20,7 @@ import java.util.Map;
  * changes using {@link com.scires.netgen.GeneratorWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.5
+ * @version 0.0.6
  */
 public class IPGUI extends JFrame {
 	private Map<String, PanelGroup> groups;
@@ -32,7 +32,7 @@ public class IPGUI extends JFrame {
 	private GeneratorWorker generatorWorker	= null;
 	public Map<String, ContainerPanel> containers = null;
 	private String[] files					= null;
-	private ProgressFrame progressFrame		= null;
+	private ProgressWindow progressWindow = null;
 	public File directory					= null;
 	private ActionListener generateAction	= null;
 	public static Color GREEN				= new Color(0, 255, 100);
@@ -44,23 +44,21 @@ public class IPGUI extends JFrame {
 		generateAction = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				progressFrame.reset(containers.size());
-				generatorWorker = new GeneratorWorker(containers, directory, files, progressFrame);
+				progressWindow.reset(containers.size());
+				generatorWorker = new GeneratorWorker(containers, directory, files, progressWindow);
 				generatorWorker.addPropertyChangeListener(new PropertyChangeListener() {
 					@Override
 					public void propertyChange(PropertyChangeEvent event) {
 						switch (event.getPropertyName()) {
-							case "progress":
-
 							case "state":
 								switch ((SwingWorker.StateValue) event.getNewValue()) {
 									case DONE:
-										progressFrame.setVisible(false);
+										progressWindow.setVisible(false);
 										generatorWorker = null;
 										openDirectory();
 										break;
 									case STARTED:
-										progressFrame.setVisible(true);
+										progressWindow.setVisible(true);
 									case PENDING:
 										break;
 								}
@@ -94,16 +92,18 @@ public class IPGUI extends JFrame {
 	}
 
 	public void processDirectory(){
-		if(progressFrame == null)
-			progressFrame = new ProgressFrame(0, "Total");
+		if(progressWindow == null)
+			progressWindow = new ProgressWindow(0);
 
-		parserWorker = new ParserWorker(directory.getAbsolutePath(), progressFrame);
+		parserWorker = new ParserWorker(directory.getAbsolutePath(), progressWindow);
 		parserWorker.addPropertyChangeListener(new PropertyChangeListener() {
 			@Override
 			public void propertyChange(PropertyChangeEvent event) {
 				switch (event.getPropertyName()) {
 					case "progress":
-
+						System.out.println(event.getNewValue());
+						progressWindow.setProgress((int)event.getNewValue());
+						break;
 					case "state":
 						switch ((SwingWorker.StateValue) event.getNewValue()) {
 							case DONE:
@@ -114,11 +114,11 @@ public class IPGUI extends JFrame {
 									addPanel(cp);
 								}
 								generateButton.setVisible(true);
-								progressFrame.setVisible(false);
+								progressWindow.setVisible(false);
 								parserWorker = null;
 								break;
 							case STARTED:
-								progressFrame.setVisible(true);
+								progressWindow.setVisible(true);
 							case PENDING:
 								break;
 						}
@@ -131,7 +131,8 @@ public class IPGUI extends JFrame {
 		//
 		// Make generate button
 		//
-		generateButton = new JButton();
+		if(generateButton == null)
+			generateButton = new JButton();
 		showGenerateButton();
 		generateButton.setVisible(false);
 
@@ -210,11 +211,7 @@ public class IPGUI extends JFrame {
 		for(Field f : ContainerPanel.class.getDeclaredFields()){
 			if(f.getModifiers() == Modifier.STATIC){
 				JPanel tab = new JPanel();
-				if(f.getName().matches("INTERFACE"))
-					tab.setLayout(new GridLayout(0,3));
-				else
-					tab.setLayout(new BoxLayout(tab, BoxLayout.Y_AXIS));
-
+				tab.setLayout(new BoxLayout(tab, BoxLayout.PAGE_AXIS));
 				JScrollPane scrollPane = new JScrollPane(tab);
 				tabs.add(tab);
 				tabbedPane.addTab(f.getName(), null, scrollPane, f.getName());
@@ -227,7 +224,13 @@ public class IPGUI extends JFrame {
 
 	private void openDirectory(){
 		if(Desktop.isDesktopSupported()){
-			File generatedDirectory = new File(this.directory.getAbsolutePath() + "\\Generated");
+		String directoryPath;
+		if(directory.isFile())
+			directoryPath = this.directory.getParentFile().getAbsolutePath();
+		else
+			directoryPath = this.directory.getAbsolutePath();
+
+			File generatedDirectory = new File(directoryPath + "\\Generated");
 			try{
 				Desktop.getDesktop().open(generatedDirectory);
 			}catch (Exception e){

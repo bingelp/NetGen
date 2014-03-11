@@ -11,6 +11,9 @@ import java.util.ArrayList;
  *
  * <P>Single Element that replaces one string with another.  Contains multiple @{link Location}s defining
  * where the target string is</P>
+ *
+ * @author Justin Robinson
+ * @version 0.0.1
  */
 public class ElementPanel extends MinimumPanel {
 	public JLabel label 					= null;
@@ -48,7 +51,7 @@ public class ElementPanel extends MinimumPanel {
 	public ElementPanel(JComponent component, String labelText, Location location, String target, String regex){
 		this.label = new JLabel(labelText);
 		this.component = component;
-		this.locations = new ArrayList<Location>();
+		this.locations = new ArrayList<>();
 		this.addLocation(location);
 		this.target = target;
 		this.regex = regex;

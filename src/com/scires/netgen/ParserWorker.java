@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,7 +16,7 @@ import java.util.regex.Pattern;
  * <P>Parser Thread to generate gui based on CISCO config files</P>
  *
  * @author Justin Robinson
- * @version 0.0.1
+ * @version 0.0.2
  *
  */
 public class ParserWorker extends SwingWorker<Integer, Integer> {
@@ -41,81 +40,43 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 					"hostname"
 			};
 	private File directory = null;
+	private String inputPath;
 	private String fileName = null;
 	public String[] files = null;
 	private LineNumberReader reader = null;
 	private int fileIndex = 0;
 	public Map<String, ContainerPanel> containers = null;
 	public ContainerPanel cp = null;
-	ProgressFrame progressFrame;
+	ProgressWindow progressWindow;
 
-	public ParserWorker(String d, ProgressFrame progressFrame){
-		this.directory = new File(d);
-		cleanDirectory();
-		this.files = directory.list();
-		this.containers = new HashMap<>();
-		this.progressFrame = progressFrame;
+	public ParserWorker(String d, ProgressWindow progressWindow){
+		inputPath = d;
+		containers = new HashMap<>();
+		directory = new File(inputPath);
+		this.progressWindow = progressWindow;
 	}
 
 	@Override
 	protected Integer doInBackground() throws Exception {
-		this.fileIndex = 0;
-		String text;
-		int command;
-		progressFrame.reset(this.files.length);
-		for ( String s : files){
-			try{
-				File f = new File(this.directory + "\\" + s);
-				fileName = f.getName().split("-")[0];
-				this.reader = new LineNumberReader(new FileReader(f));
-				this.reader.skip(Long.MAX_VALUE);
-				this.reader = new LineNumberReader(new FileReader(f));
-
-				while ((text = this.reader.readLine()) != null){
-					text=text.trim();
-					if(!isComment(text) && (command = getCommand(text)) != -1){
-
-						switch(command){
-							case 0: processGlobal(text, "Domain Name", ElementPanel.NOT_BLANK);
-								break;
-							case 1: processGlobal(text, "Name Server", ElementPanel.IP_HOST);
-								break;
-							case 2: processGlobal(text, "Secret", ElementPanel.COC_PWD);
-								break;
-							case 3: processCredentials(text);
-								break;
-							case 4: processKeyChain();
-								break;
-							case 5: processGlobal(text, "VTP Password", ElementPanel.NOT_BLANK);
-								break;
-							case 6: processInterface(text);
-								break;
-							case 7: processRouter(text);
-								break;
-							case 8: processLogging(text);
-								break;
-							case 9: processAccessList(text);
-								break;
-							case 10:processNTP(text);
-								break;
-							case 11:processHostName(text);
-								break;
-						}
-					}
-				}
-			} catch (Exception e){
-				System.out.println("Command: " + fileIndex + "." + reader.getLineNumber() + " " + ERROR + e.getMessage());
-			} finally {try{if (this.reader != null)this.reader.close();} catch (IOException e){System.out.println(ERROR + e.getMessage());}}
-			publish(fileIndex++);
+		if(this.directory.isDirectory()){
+			directory = new File(inputPath);
+			cleanDirectory();
+			files=directory.list();
+			progressWindow.reset(this.files.length);
+			processDirectory();
 		}
+		else{
+			directory = new File(inputPath);
+			files = new String[]{directory.getName()};
+			directory = directory.getParentFile();
+			progressWindow.reset(this.files.length);
+			processFile(new File(inputPath).getName());
+		}
+
 
 		return 1;
 	}
 
-	@Override
-	protected void process(final List<Integer> integers){
-		progressFrame.incrementProgress(integers.size());
-	}
 	private void cleanDirectory(){
 		File generatedDirectory = new File(this.directory + "\\Generated");
 		if(generatedDirectory.exists()){
@@ -129,6 +90,67 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 			if(!success)
 				System.out.println("Error deleting Generated directory");
 		}
+	}
+	private void processDirectory(){
+		this.fileIndex = 0;
+		for ( String s : files){
+			processFile(s);
+		}
+	}
+	private void processFile(String filePath){
+		try{
+			String text;
+			File f = new File(this.directory + "\\" + filePath);
+			fileName = f.getName().split("-")[0];
+			this.reader = new LineNumberReader(new FileReader(f));
+			this.reader.skip(Long.MAX_VALUE);
+			this.reader = new LineNumberReader(new FileReader(f));
+
+			while ((text = this.reader.readLine()) != null){
+				text=text.trim();
+				if(!isComment(text)){
+					switch(getCommand(text)){
+						case 0: processGlobal(text, "Domain Name", ElementPanel.NOT_BLANK);
+							break;
+						case 1: processGlobal(text, "Name Server", ElementPanel.IP_HOST);
+							break;
+						case 2: processGlobal(text, "Secret", ElementPanel.COC_PWD);
+							break;
+						case 3: processCredentials(text);
+							break;
+						case 4: processKeyChain();
+							break;
+						case 5: processGlobal(text, "VTP Password", ElementPanel.NOT_BLANK);
+							break;
+						case 6: processInterface(text);
+							break;
+						case 7: processRouter(text);
+							break;
+						case 8: processLogging(text);
+							break;
+						case 9: processAccessList(text);
+							break;
+						case 10:processNTP(text);
+							break;
+						case 11:processHostName(text);
+							break;
+						default:
+							break;
+					}
+				}
+			}
+		} catch (Exception e){
+			System.out.println("Command: " + fileIndex + "." + reader.getLineNumber() + " " + ERROR + e.getMessage());
+		} finally {
+			try{
+				if (this.reader != null)
+					this.reader.close();
+			} catch (IOException e){
+				System.out.println(ERROR + e.getMessage());
+			}
+		}
+		//publish(fileIndex);
+		setProgress(++fileIndex);
 	}
 
 	private int getCommand(String line){
