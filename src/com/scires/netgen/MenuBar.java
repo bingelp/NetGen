@@ -65,7 +65,7 @@ public class MenuBar extends JMenuBar {
 	}
 
 	public void chooseDirectory(Action action){
-		int option = 0;
+		int option = JFileChooser.FILES_ONLY;
 		String title = null;
 		i = (IPGUI) SwingUtilities.getRoot(this);
 		JFileChooser chooser = new JFileChooser();
