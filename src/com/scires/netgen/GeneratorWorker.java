@@ -17,7 +17,7 @@ import java.util.List;
  * <P>Generator for config files based on data from {@link com.scires.netgen.ParserWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.9
+ * @version 0.0.10
  */
 public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 	private Map<String, ContainerPanel> containers	= null;
@@ -25,6 +25,7 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 	private String[] files							= null;
 	ProgressWindow progressWindow;
 	private static String TAG						= "GeneratorWorker";
+	private String lineSeparator = System.getProperty("line.separator");
 	public GeneratorWorker(Map<String, ContainerPanel> containers, File directory, String[] files, ProgressWindow progressWindow){
 		this.containers = containers;
 		if(directory.isFile())
@@ -141,16 +142,17 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 				writer = new FileOutputStream(tempOutFilePath);
 
 				//skip lines leading up to the one we need to edit
+
 				for (int linesSkipped = 0; linesSkipped < lineNumber - 1; linesSkipped++)
-					writer.write((reader.readLine() + '\n').getBytes());
+					writer.write((reader.readLine() + lineSeparator).getBytes());
 
 				//read in line
 				//replace target text with replacement
-				line = reader.readLine() + '\n';
+				line = reader.readLine() + lineSeparator;
 				line = line.replace(target, replacement);
 				writer.write(line.getBytes());
 				while ((line = reader.readLine()) != null) {
-					writer.write((line + '\n').getBytes());
+					writer.write((line + lineSeparator).getBytes());
 				}
 				writer.flush();
 				writer.close();
