@@ -17,7 +17,7 @@ import java.util.List;
  * <P>Generator for config files based on data from {@link com.scires.netgen.ParserWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.8
+ * @version 0.0.9
  */
 public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 	private Map<String, ContainerPanel> containers	= null;
@@ -56,7 +56,7 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 				for(ElementPanel ep : cp.elements.values()){
 					if(ep.isText()){
 						String text = ep.getTextField().getText().trim();
-						if ( !text.isEmpty() && text.compareTo(ep.originalText) != 0){
+						if ( !text.isEmpty() && text.compareTo(ep.getTargetText()) != 0){
 							ep.replacement = text;
 							String newFileName = null;
 							if (cp.tab == ContainerPanel.HOST_NAME){
@@ -127,8 +127,15 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 				File outFile = new File(outFilePath);
 				if (outFile.exists())
 					reader = new LineNumberReader(new FileReader(outFilePath));
-				else
+				else {
 					reader = new LineNumberReader(new FileReader(inFilePath));
+					// if a file was deleted reset the state of that element it controls
+					if(ep.updatedText != null){
+						ep.updatedText = null;
+						target = ep.originalText;
+						ep.target = target;
+					}
+				}
 
 				//Write to a tmp file
 				writer = new FileOutputStream(tempOutFilePath);
@@ -170,8 +177,8 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 			}
 		}
 		// we need to update the target text with our replacement so we can do multiple runs
-		// without having the reparse the file(s)
+		// without having to reparse the file(s)
 		ep.target = ep.replacement;
-		ep.originalText = ep.target;
+		ep.updatedText = ep.target;
 	}
 }

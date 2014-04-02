@@ -13,7 +13,7 @@ import java.util.ArrayList;
  * where the target string is</P>
  *
  * @author Justin Robinson
- * @version 0.0.1
+ * @version 0.0.2
  */
 public class ElementPanel extends MinimumPanel {
 	public JLabel label 					= null;
@@ -24,6 +24,7 @@ public class ElementPanel extends MinimumPanel {
 	public String regex						= null;
 	public String originalText				= null;
 	public boolean originalState				  ;
+	public String updatedText				= null;
 	public String trueText					= null;
 	public String falseText					= null;
 	public final static Color COLOR_ERROR = new Color(255, 75, 75);
@@ -163,5 +164,12 @@ public class ElementPanel extends MinimumPanel {
 		if(textField.getBackground() == COLOR_ERROR)
 			out = false;
 		return out;
+	}
+
+	public String getTargetText(){
+		if(updatedText != null)
+			return updatedText;
+		else
+			return originalText;
 	}
 }
