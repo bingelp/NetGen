@@ -42,7 +42,8 @@ public class AboutWindow extends JDialog {
 		titleTextArea.setFont(titleFont);
 		titleTextArea.setBackground(this.getBackground());
 
-		JTextArea bodyTextArea = new JTextArea("Updates CISCO router and switch configs");
+		JTextArea bodyTextArea = new JTextArea("Updates CISCO router and switch configs\n" +
+				"Requires Java Runtime Environment(JRE) 7 or above");
 		bodyTextArea.setPreferredSize(bodySize);
 		bodyTextArea.setBackground(this.getBackground());
 
