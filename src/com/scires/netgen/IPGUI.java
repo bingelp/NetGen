@@ -20,27 +20,26 @@ import java.util.Map;
  * changes using {@link com.scires.netgen.GeneratorWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.6
+ * @version 0.0.7
  */
 public class IPGUI extends JFrame {
 	private Map<String, PanelGroup> groups;
-	private ArrayList<JPanel> tabs			= null;
-	public int[] badFields					= null;
-	JTabbedPane tabbedPane					= null;
-	JButton generateButton					= null;
-	private ParserWorker parserWorker		= null;
-	private GeneratorWorker generatorWorker	= null;
-	public Map<String, ContainerPanel> containers = null;
-	private String[] files					= null;
-	private ProgressWindow progressWindow = null;
-	public File directory					= null;
-	private ActionListener generateAction	= null;
-	public static Color GREEN				= new Color(0, 255, 100);
+	private ArrayList<JPanel> tabs					= null;
+	public int[] badFields							= null;
+	JTabbedPane tabbedPane							= null;
+	JButton generateButton							= null;
+	private ParserWorker parserWorker				= null;
+	private GeneratorWorker generatorWorker			= null;
+	public Map<String, ContainerPanel> containers	= null;
+	private String[] files							= null;
+	private ProgressWindow progressWindow			= null;
+	public File directory							= null;
+	private ActionListener generateAction			= null;
+	public static Color GREEN						= new Color(0, 255, 100);
 
 	public IPGUI(){
 		groups = new HashMap<>();
 		this.setTitle("NetGen");
-		directory = new File("C:\\Users\\Justin\\git\\NetGen\\data\\SIPR-Configs");
 		generateAction = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -88,7 +87,6 @@ public class IPGUI extends JFrame {
 		this.validate();
 		this.setAlwaysOnTop(false);
 		this.setVisible(true);
-		//processDirectory();
 	}
 
 	public void processDirectory(){
@@ -101,7 +99,6 @@ public class IPGUI extends JFrame {
 			public void propertyChange(PropertyChangeEvent event) {
 				switch (event.getPropertyName()) {
 					case "progress":
-						System.out.println(event.getNewValue());
 						progressWindow.setProgress((int)event.getNewValue());
 						break;
 					case "state":
@@ -148,12 +145,14 @@ public class IPGUI extends JFrame {
 	public void hideGenerateButton(){
 		this.generateButton.setText("Fix errors before continuing");
 		this.generateButton.setBackground(ElementPanel.COLOR_ERROR);
-		this.generateButton.removeActionListener(generateAction);
+		if(this.generateButton.getActionListeners().length == 1)
+			this.generateButton.removeActionListener(generateAction);
 	}
 	public void showGenerateButton(){
 		this.generateButton.setText("Generate");
 		this.generateButton.setBackground(GREEN);
-		this.generateButton.addActionListener(generateAction);
+		if(this.generateButton.getActionListeners().length == 0)
+			this.generateButton.addActionListener(generateAction);
 	}
 
 	@Override

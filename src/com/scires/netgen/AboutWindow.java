@@ -9,12 +9,12 @@ import java.awt.*;
  * <P>About window</P>
  *
  * @author Justin Robinson
- * @version 0.0.1
+ * @version 0.0.12
  */
 public class AboutWindow extends JDialog {
 	Container container;
 	String programName = "Netgen";
-	String version = "0.0.8";
+	String version = "0.0.12";
 	private static String TAG = "AboutWindow ";
 
 	public AboutWindow(){
@@ -22,7 +22,7 @@ public class AboutWindow extends JDialog {
 
 		int width = 400;
 		int height = 400;
-		int titleHeight = 50;
+		//int titleHeight = 50;
 		int bodyHeight = 50;
 		Dimension size = new Dimension(width-15, height);
 		Dimension bodySize = new Dimension(width-50, bodyHeight);

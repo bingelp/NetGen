@@ -1,10 +1,7 @@
 package com.scires.netgen;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -47,7 +44,8 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	private int fileIndex = 0;
 	public Map<String, ContainerPanel> containers = null;
 	public ContainerPanel cp = null;
-	ProgressWindow progressWindow;
+	public ProgressWindow progressWindow;
+	public String generatedFolder = "Generated";
 
 	public ParserWorker(String d, ProgressWindow progressWindow){
 		inputPath = d;
@@ -61,7 +59,17 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 		if(this.directory.isDirectory()){
 			directory = new File(inputPath);
 			cleanDirectory();
-			files=directory.list();
+			FilenameFilter noGenerateFolder = new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					boolean accepted = true;
+					if(name.matches(generatedFolder))
+						accepted = false;
+
+					return accepted;
+				}
+			};
+			files=directory.list(noGenerateFolder);
 			progressWindow.reset(this.files.length);
 			processDirectory();
 		}
@@ -78,7 +86,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	}
 
 	private void cleanDirectory(){
-		File generatedDirectory = new File(this.directory + "\\Generated");
+		File generatedDirectory = new File(this.directory + "\\" + generatedFolder);
 		if(generatedDirectory.exists()){
 			String[] files = generatedDirectory.list();
 			for(String file: files){
@@ -86,9 +94,6 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 				if(!result)
 					System.out.println("Error deleting file");
 			}
-			boolean success = generatedDirectory.delete();
-			if(!success)
-				System.out.println("Error deleting Generated directory");
 		}
 	}
 	private void processDirectory(){

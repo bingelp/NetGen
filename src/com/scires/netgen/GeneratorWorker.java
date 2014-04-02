@@ -5,8 +5,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.LineNumberReader;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.List;
+
 
 /**
  * Created by Justin on 2/21/14.
@@ -14,7 +17,7 @@ import java.util.List;
  * <P>Generator for config files based on data from {@link com.scires.netgen.ParserWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.6
+ * @version 0.0.8
  */
 public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 	private Map<String, ContainerPanel> containers	= null;
@@ -95,13 +98,30 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 			int fileIndex = l.fileIndex;
 			int lineNumber = l.lineNumber;
 			try {
-				String outFileName;
-				if( newFileName != null )
-					outFileName = this.files[fileIndex].replace(ep.target, ep.replacement);
-				else
-					outFileName = this.files[fileIndex];
-				String outFilePath = this.directory.getAbsolutePath() + "\\" + outFileName;
-				String inFilePath = this.directory.getParentFile().getAbsolutePath() + "\\" + this.files[fileIndex];
+				String outDirectory = this.directory.getAbsolutePath();
+				String inDirectory = this.directory.getParentFile().getAbsolutePath();
+				String inFilePath = inDirectory + "\\" + this.files[fileIndex];
+				//
+				// If a new file name was specified update it in the files array and rename the output file if it exists
+				//
+				if( newFileName != null ) {
+					newFileName = this.files[fileIndex].replace(target, replacement);
+					File oldFile = new File(this.directory.getAbsolutePath() + "\\" + this.files[fileIndex]);
+					if(oldFile.exists()){
+						File newFile = new File(this.directory.getAbsolutePath() + "\\" + newFileName);
+						try{
+							Files.move(oldFile.toPath(), newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+						}catch(Exception e){
+							System.out.println(TAG + " " + e.getCause());
+						}
+					}
+					this.files[fileIndex] = newFileName;
+				}
+				String outFileName = this.files[fileIndex];
+				String tempOutFileName = outFileName+".tmp";
+				String tempOutFilePath = outDirectory + "\\" + tempOutFileName;
+				String outFilePath = outDirectory + "\\" + outFileName;
+
 				//Reads in our generated file from a previous run if it exists,
 				//so we don't overwrite our work
 				File outFile = new File(outFilePath);
@@ -111,7 +131,7 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 					reader = new LineNumberReader(new FileReader(inFilePath));
 
 				//Write to a tmp file
-				writer = new FileOutputStream(outFilePath+".tmp");
+				writer = new FileOutputStream(tempOutFilePath);
 
 				//skip lines leading up to the one we need to edit
 				for (int linesSkipped = 0; linesSkipped < lineNumber - 1; linesSkipped++)
@@ -129,15 +149,22 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 				writer.close();
 				reader.close();
 
-				//rename tmp to txt
+				//Rename tmp to txt
+				try{
+					Files.move(new File(tempOutFilePath).toPath(), outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				}catch(Exception e){
+					System.out.println(TAG + " " + e.getCause());
+				}
+
+/*				//rename tmp to txt
 				if (outFile.exists()){
 					boolean result = outFile.delete();
 					if(!result)
 						System.out.println("Error deleting file");
 				}
-				boolean result = new File(outFilePath+".tmp").renameTo(outFile);
+				boolean result = new File(tempOutFilePath).renameTo(outFile);
 				if(!result)
-					System.out.println("Error renaming .tmp file");
+					System.out.println("Error renaming .tmp file");*/
 			} catch (Exception e) {
 				System.out.println(TAG + " " + ParserWorker.ERROR + e.getMessage());
 			}

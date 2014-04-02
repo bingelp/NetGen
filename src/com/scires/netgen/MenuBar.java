@@ -11,7 +11,7 @@ import java.io.File;
  * Simple menu
  *
  * @author Justin Robinson
- * @version 0.0.2
+ * @version 0.0.3
  */
 public class MenuBar extends JMenuBar {
 
@@ -52,7 +52,7 @@ public class MenuBar extends JMenuBar {
 		menuItem = new JMenuItem("Open File");
 		menuItem.addActionListener(openFile);
 		menu.add(menuItem);
-		menuItem = new JMenuItem("OpenFolder");
+		menuItem = new JMenuItem("Open Folder");
 		menuItem.addActionListener(openFolder);
 		menu.add(menuItem);
 
