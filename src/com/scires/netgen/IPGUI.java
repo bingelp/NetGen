@@ -143,16 +143,18 @@ public class IPGUI extends JFrame {
 	}
 
 	public void hideGenerateButton(){
-		this.generateButton.setText("Fix errors before continuing");
-		this.generateButton.setBackground(ElementPanel.COLOR_ERROR);
-		if(this.generateButton.getActionListeners().length == 1)
+		if(this.generateButton.getActionListeners().length == 1) {
+			this.generateButton.setText("Fix errors before continuing");
+			this.generateButton.setBackground(ElementPanel.COLOR_ERROR);
 			this.generateButton.removeActionListener(generateAction);
+		}
 	}
 	public void showGenerateButton(){
-		this.generateButton.setText("Generate");
-		this.generateButton.setBackground(GREEN);
-		if(this.generateButton.getActionListeners().length == 0)
+		if(this.generateButton.getActionListeners().length == 0) {
+			this.generateButton.setText("Generate");
+			this.generateButton.setBackground(GREEN);
 			this.generateButton.addActionListener(generateAction);
+		}
 	}
 
 	@Override

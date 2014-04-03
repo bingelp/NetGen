@@ -9,12 +9,12 @@ import java.awt.*;
  * <P>About window</P>
  *
  * @author Justin Robinson
- * @version 0.0.15
+ * @version 0.0.16
  */
 public class AboutWindow extends JDialog {
 	Container container;
 	String programName = "Netgen";
-	String version = "0.0.15";
+	String version = "0.0.16";
 	private static String TAG = "AboutWindow ";
 
 	public AboutWindow(){

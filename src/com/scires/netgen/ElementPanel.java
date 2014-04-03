@@ -35,11 +35,11 @@ public class ElementPanel extends MinimumPanel {
 			"\\.(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)";
 	private static String THREE_HOST_IP_OCTETS =
 			"\\b(25[0-4]|2[0-4]\\d|[01]?\\d\\d?)" +
-					"\\.(25[0-4]|2[0-4]\\d|[01]?\\d\\d?)" +
-					"\\.(25[0-4]|2[0-4]\\d|[01]?\\d\\d?)";
+			"\\.(25[0-4]|2[0-4]\\d|[01]?\\d\\d?)" +
+			"\\.(25[0-4]|2[0-4]\\d|[01]?\\d\\d?)";
 	static String IP_GENERIC = THREE_IP_OCTETS+"\\.(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b";
 	static String IP_GENERIC_LINE = ".*"+IP_GENERIC+".*";
-	static String IP_HOST = THREE_HOST_IP_OCTETS + "\\.(25[0-4]|2[0-4]\\d|[01]?[1-9]\\d?)\\b";
+	static String IP_HOST = THREE_HOST_IP_OCTETS + "\\.(25[0-4]|2[0-4]\\d||[1]\\d\\d|[1-9]\\d?)\\b";
 	static String IP_GATEWAY = THREE_IP_OCTETS + "\\.0";
 	static String KEY_TIME =
 			"(?:((?:\\d{2}:){2}\\d{2} " +
