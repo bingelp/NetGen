@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  * <P>Parser Thread to generate gui based on CISCO config files</P>
  *
  * @author Justin Robinson
- * @version 0.0.2
+ * @version 0.1.0
  *
  */
 public class ParserWorker extends SwingWorker<Integer, Integer> {
@@ -45,9 +45,11 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	public Map<String, ContainerPanel> containers = null;
 	public ContainerPanel cp = null;
 	public ProgressWindow progressWindow;
-	public String generatedFolder = "Generated";
+	private DB db;
 
-	public ParserWorker(String d, ProgressWindow progressWindow){
+	public ParserWorker(String d, ProgressWindow progressWindow, DB db){
+		this.db = db;
+		this.db.reset();
 		inputPath = d;
 		containers = new HashMap<>();
 		directory = new File(inputPath);
@@ -58,12 +60,11 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	protected Integer doInBackground() throws Exception {
 		if(this.directory.isDirectory()){
 			directory = new File(inputPath);
-			cleanDirectory();
 			FilenameFilter noGenerateFolder = new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name) {
 					boolean accepted = true;
-					if(name.matches(generatedFolder))
+					if(name.matches(IPGUI.GENERATED_FOLDER))
 						accepted = false;
 
 					return accepted;
@@ -80,22 +81,10 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 			progressWindow.reset(this.files.length);
 			processFile(new File(inputPath).getName());
 		}
-
-
 		return 1;
 	}
 
-	private void cleanDirectory(){
-		File generatedDirectory = new File(this.directory + "\\" + generatedFolder);
-		if(generatedDirectory.exists()){
-			String[] files = generatedDirectory.list();
-			for(String file: files){
-				boolean result = new File(generatedDirectory.getPath(), file).delete();
-				if(!result)
-					System.out.println("Error deleting file");
-			}
-		}
-	}
+
 	private void processDirectory(){
 		this.fileIndex = 0;
 		for ( String s : files){
@@ -104,6 +93,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	}
 	private void processFile(String filePath){
 		try{
+			db.saveFile(files[fileIndex]);
 			String text;
 			File f = new File(this.directory + "\\" + filePath);
 			fileName = f.getName().split("-")[0];
@@ -172,13 +162,13 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 		boolean out = false; if (line.startsWith("!")){ out = true;} return out;}
 
 	private void processGlobal(String line, String labelText, String regex){
-		markElement(null, line.split(SPACE)[2], labelText, labelText, regex);
+		markElement(null, line.split(SPACE)[2], labelText, labelText, regex, false);
 		containerize(null, ContainerPanel.GLOBAL);
 	}
 	private void processCredentials(String line){
 		String[] split = line.split(SPACE);
-		markElement(null, split[1], "Username", "Username", ElementPanel.NOT_BLANK);
-		markElement(null, split[3], "Password", "Password", ElementPanel.COC_PWD);
+		markElement(null, split[1], "Username", "Username", ElementPanel.NOT_BLANK, false);
+		markElement(null, split[3], "Password", "Password", ElementPanel.COC_PWD, false);
 		containerize(null, ContainerPanel.GLOBAL);
 	}
 	private void processKeyChain(){
@@ -211,8 +201,8 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 
 					//make gui elements for both fields
 					if(startDate != null && endDate != null){
-						markElement(new RouterDatePicker(), startDate, "Begin Life", "Start Life", ElementPanel.KEY_TIME);
-						markElement(new RouterDatePicker(), endDate, "End Life", "End Life", ElementPanel.KEY_TIME);
+						markElement(new RouterDatePicker(), startDate, "Begin Life", "Start Life", ElementPanel.KEY_TIME, false);
+						markElement(new RouterDatePicker(), endDate, "End Life", "End Life", ElementPanel.KEY_TIME, false);
 						containerize(keyNumber, ContainerPanel.KEY_CHAIN);
 					}
 				}
@@ -238,7 +228,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					markElement(null, split[2], name, name, ElementPanel.IP_HOST);
+					markElement(null, split[2], name, name, ElementPanel.IP_HOST, false);
 					addedInterface=true;
 				}
 			}
@@ -266,10 +256,10 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					markElement(null, split[1],commands[0],commands[0]+split[1],ElementPanel.IP_GATEWAY);
+					markElement(null, split[1],commands[0],commands[0]+split[1],ElementPanel.IP_GATEWAY, false);
 				}else if( line.startsWith(commands[1]) ){
 					String ip = split[split.length-1];
-					markElement(null, ip, commands[1], commands[1], ElementPanel.IP_HOST);
+					markElement(null, ip, commands[1], commands[1], ElementPanel.IP_HOST, false);
 				}
 			}
 			containerize(routerNumber, ContainerPanel.ROUTER);
@@ -286,7 +276,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	private void processLogging(String line){
 		line = line.split(SPACE)[1];
 		if(line.matches(ElementPanel.IP_GENERIC)){
-			markElement(null, line, "Logging Server", "Logging Server", ElementPanel.IP_HOST);
+			markElement(null, line, "Logging Server", "Logging Server", ElementPanel.IP_HOST, false);
 			containerize(null, ContainerPanel.GLOBAL);
 		}
 	}
@@ -310,15 +300,15 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 						checked=false;
 						target=deny;
 					}
-					markElement(new JCheckBox("", checked), target, null, PERMIT_DENY, null);
+					markElement(new JCheckBox("", checked), target, null, PERMIT_DENY, null, false);
 				}
 				else if( word.matches("host") ){
-					markElement(null, split[++i], "host", "host" + reader.getLineNumber(), ElementPanel.IP_GENERIC);
+					markElement(null, split[++i], "host", "host" + reader.getLineNumber(), ElementPanel.IP_GENERIC, false);
 				}
 				//network and subnet
 				else if( word.matches(ElementPanel.IP_GENERIC) ){
-					markElement(null, word, "network", "network" + reader.getLineNumber(), ElementPanel.IP_GENERIC);
-					markElement(null, split[i++], "wildcard", "wildcard" + reader.getLineNumber(), ElementPanel.IP_GENERIC);
+					markElement(null, word, "network", "network" + reader.getLineNumber(), ElementPanel.IP_GENERIC, false);
+					markElement(null, split[i++], "wildcard", "wildcard" + reader.getLineNumber(), ElementPanel.IP_GENERIC, false);
 				}
 			}
 			containerize(fileName, ContainerPanel.ACCESS_LIST);
@@ -326,16 +316,16 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	}
 	private void processNTP(String line){
 		String[] split = line.split(SPACE);
-		markElement(null, split[2], "Peer", "Peer" + split[2], ElementPanel.IP_GENERIC);
+		markElement(null, split[2], "Peer", "Peer" + split[2], ElementPanel.IP_GENERIC, false);
 		containerize(null, ContainerPanel.NTP_PEER);
 	}
 	private void processHostName(String line){
-		markElement(null, line.split(SPACE)[1], fileName, fileName, ElementPanel.NOT_BLANK);
+		markElement(null, line.split(SPACE)[1], fileName, fileName, ElementPanel.NOT_BLANK, true);
 		containerize(null, ContainerPanel.HOST_NAME);
 	}
 
 
-	private void markElement(JComponent component, String target, String labelText, String type, String regex){
+	private void markElement(JComponent component, String target, String labelText, String type, String regex, boolean host){
 		if(component == null)
 			component = new JTextField(15);
 		Location l = new Location();
@@ -354,6 +344,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 			this.cp = new ContainerPanel();
 		this.cp.elements.put(type, ep);
 		this.cp.add(this.cp.elements.get(type));
+		db.saveItem(files[fileIndex],l.lineNumber,target, host);
 	}
 	private void containerize(String group, int tab){
 		String key = this.cp.elements.keySet().toString();

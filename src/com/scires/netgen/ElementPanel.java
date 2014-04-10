@@ -4,6 +4,8 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 /**
@@ -13,7 +15,7 @@ import java.util.ArrayList;
  * where the target string is</P>
  *
  * @author Justin Robinson
- * @version 0.0.2
+ * @version 0.0.3
  */
 public class ElementPanel extends MinimumPanel {
 	public JLabel label 					= null;
@@ -24,7 +26,6 @@ public class ElementPanel extends MinimumPanel {
 	public String regex						= null;
 	public String originalText				= null;
 	public boolean originalState				  ;
-	public String updatedText				= null;
 	public String trueText					= null;
 	public String falseText					= null;
 	public final static Color COLOR_ERROR = new Color(255, 75, 75);
@@ -67,18 +68,26 @@ public class ElementPanel extends MinimumPanel {
 				textField.getDocument().addDocumentListener(new DocumentListener() {
 					@Override
 					public void insertUpdate(DocumentEvent e) {
-						checkField(textField);
+						checkTextField(textField);
 					}
-
 					@Override
 					public void removeUpdate(DocumentEvent e) {
-						checkField(textField);
+						checkTextField(textField);
 					}
-
 					@Override
 					public void changedUpdate(DocumentEvent e) {
-						checkField(textField);
+						checkTextField(textField);
 					}
+				});
+			}else if( isDate() ){
+				final RouterDatePicker rdp = (RouterDatePicker)this.component;
+				rdp.getEditor().getDocument().addDocumentListener(new DocumentListener() {
+					@Override
+					public void insertUpdate(DocumentEvent e) {checkDateField(rdp);}
+					@Override
+					public void removeUpdate(DocumentEvent e) {checkDateField(rdp);}
+					@Override
+					public void changedUpdate(DocumentEvent e) {checkDateField(rdp);}
 				});
 			}
 		}
@@ -86,6 +95,18 @@ public class ElementPanel extends MinimumPanel {
 			this.trueText = "permit";
 			this.falseText = "deny";
 			this.originalState = getCheckBox().isSelected();
+			final JCheckBox checkBox = (JCheckBox)this.component;
+			checkBox.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					IPGUI i = (IPGUI) SwingUtilities.getRoot(checkBox);
+					ElementPanel ep = (ElementPanel)checkBox.getParent();
+					if(checkBox.isSelected() != ep.originalState) {
+						ep.replacement = checkBox.isSelected() ? ep.trueText : ep.falseText;
+						i.db.setReplacement(locations, ep.replacement, ep.target);
+					}
+				}
+			});
 		}
 		this.make();
 	}
@@ -109,17 +130,21 @@ public class ElementPanel extends MinimumPanel {
 	public boolean isDate(){
 		return this.component.getClass().toString().matches("class com.scires.netgen.RouterDatePicker");
 	}
-	public JTextField getTextField(){
-		return (JTextField)this.component;
-	}
 	public JCheckBox getCheckBox(){
 		return (JCheckBox)this.component;
 	}
-	public RouterDatePicker getDatePicker(){
-		return (RouterDatePicker)this.component;
-	}
 
-	private void checkField(JTextField textField){
+	private void checkDateField(RouterDatePicker rdp){
+		IPGUI i = (IPGUI) SwingUtilities.getRoot(this);
+		if( i != null) {
+			String currentText = rdp.getRouterTime();
+			boolean changed = !currentText.matches(this.originalText);
+			if(changed) {
+				i.db.setReplacement(locations, rdp.getRouterTime(), this.target);
+			}
+		}
+	}
+	private void checkTextField(JTextField textField){
 		//
 		// Get base pane
 		//
@@ -155,6 +180,14 @@ public class ElementPanel extends MinimumPanel {
 				i.showGenerateButton();
 			else
 				i.hideGenerateButton();
+
+			if(valid) {
+				i.db.setReplacement(locations, text, this.target);
+				ContainerPanel cp = (ContainerPanel)this.getParent();
+				if(cp.tab == ContainerPanel.HOST_NAME) {
+						i.db.setOutputFileName(locations, text+".txt");
+				}
+			}
 		}
 	}
 
@@ -164,12 +197,5 @@ public class ElementPanel extends MinimumPanel {
 		if(textField.getBackground() == COLOR_ERROR)
 			out = false;
 		return out;
-	}
-
-	public String getTargetText(){
-		if(updatedText != null)
-			return updatedText;
-		else
-			return originalText;
 	}
 }

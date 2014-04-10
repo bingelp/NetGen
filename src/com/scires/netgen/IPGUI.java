@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -20,7 +22,7 @@ import java.util.Map;
  * changes using {@link com.scires.netgen.GeneratorWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.7
+ * @version 0.0.8
  */
 public class IPGUI extends JFrame {
 	private Map<String, PanelGroup> groups;
@@ -31,11 +33,12 @@ public class IPGUI extends JFrame {
 	private ParserWorker parserWorker				= null;
 	private GeneratorWorker generatorWorker			= null;
 	public Map<String, ContainerPanel> containers	= null;
-	private String[] files							= null;
 	private ProgressWindow progressWindow			= null;
 	public File directory							= null;
 	private ActionListener generateAction			= null;
 	public static Color GREEN						= new Color(0, 255, 100);
+	public static String GENERATED_FOLDER = "Generated";
+	public DB db;
 
 	public IPGUI(){
 		groups = new HashMap<>();
@@ -43,8 +46,9 @@ public class IPGUI extends JFrame {
 		generateAction = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				cleanDirectory();
 				progressWindow.reset(containers.size());
-				generatorWorker = new GeneratorWorker(containers, directory, files, progressWindow);
+				generatorWorker = new GeneratorWorker(directory, progressWindow, db);
 				generatorWorker.addPropertyChangeListener(new PropertyChangeListener() {
 					@Override
 					public void propertyChange(PropertyChangeEvent event) {
@@ -87,13 +91,23 @@ public class IPGUI extends JFrame {
 		this.validate();
 		this.setAlwaysOnTop(false);
 		this.setVisible(true);
+
+		db = new DB();
+
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				super.windowClosing(e);
+				db.disconnect();
+			}
+		});
 	}
 
 	public void processDirectory(){
 		if(progressWindow == null)
 			progressWindow = new ProgressWindow(0);
 
-		parserWorker = new ParserWorker(directory.getAbsolutePath(), progressWindow);
+		parserWorker = new ParserWorker(directory.getAbsolutePath(), progressWindow, this.db);
 		parserWorker.addPropertyChangeListener(new PropertyChangeListener() {
 			@Override
 			public void propertyChange(PropertyChangeEvent event) {
@@ -106,7 +120,6 @@ public class IPGUI extends JFrame {
 							case DONE:
 								initTabs();
 								containers = parserWorker.containers;
-								files = parserWorker.files;
 								for (ContainerPanel cp : containers.values()) {
 									addPanel(cp);
 								}
@@ -123,6 +136,7 @@ public class IPGUI extends JFrame {
 				}
 			}
 		});
+		cleanDirectory();
 		parserWorker.execute();
 
 		//
@@ -140,6 +154,17 @@ public class IPGUI extends JFrame {
 
 		this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		this.pack();
+	}
+	private void cleanDirectory(){
+		File generatedDirectory = new File(this.directory + "\\" + IPGUI.GENERATED_FOLDER);
+		if(generatedDirectory.exists()){
+			String[] files = generatedDirectory.list();
+			for(String file: files){
+				boolean result = new File(generatedDirectory.getPath(), file).delete();
+				if(!result)
+					System.out.println("Error deleting file");
+			}
+		}
 	}
 
 	public void hideGenerateButton(){
@@ -231,7 +256,7 @@ public class IPGUI extends JFrame {
 		else
 			directoryPath = this.directory.getAbsolutePath();
 
-			File generatedDirectory = new File(directoryPath + "\\Generated");
+			File generatedDirectory = new File(directoryPath + "\\" + GENERATED_FOLDER);
 			try{
 				Desktop.getDesktop().open(generatedDirectory);
 			}catch (Exception e){
