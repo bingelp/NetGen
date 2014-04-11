@@ -12,7 +12,7 @@ import org.h2.tools.Server;
  * <P>Custom DB class to read/write file names and text to replace</P>
  *
  * @author Justin Robinson
- * @version 0.0.1
+ * @version 0.0.2
  */
 
 @SuppressWarnings("unchecked")

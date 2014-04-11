@@ -14,7 +14,7 @@ import java.util.Map;
  * <P>Handles file generation based on input from {@link com.scires.netgen.GeneratorWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.1
+ * @version 0.0.2
  */
 public class Generator{
 

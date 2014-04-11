@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  * <P>Parser Thread to generate gui based on CISCO config files</P>
  *
  * @author Justin Robinson
- * @version 0.1.0
+ * @version 0.1.1
  *
  */
 public class ParserWorker extends SwingWorker<Integer, Integer> {

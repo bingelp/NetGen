@@ -15,7 +15,7 @@ import java.util.ArrayList;
  * where the target string is</P>
  *
  * @author Justin Robinson
- * @version 0.0.3
+ * @version 0.0.4
  */
 public class ElementPanel extends MinimumPanel {
 	public JLabel label 					= null;

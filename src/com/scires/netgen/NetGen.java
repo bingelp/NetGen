@@ -8,7 +8,7 @@ import java.awt.*;
  * <P>Application to import and edit Cisco configuration files</P>
  *
  * @author Justin Robinson
- * @version 0.0.4
+ * @version 0.0.5
  */
 public class NetGen {
     public final static Color COLOR_ERROR = new Color(255, 75, 75);

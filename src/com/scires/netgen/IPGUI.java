@@ -22,7 +22,7 @@ import java.util.Map;
  * changes using {@link com.scires.netgen.GeneratorWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.8
+ * @version 0.0.9
  */
 public class IPGUI extends JFrame {
 	private Map<String, PanelGroup> groups;
