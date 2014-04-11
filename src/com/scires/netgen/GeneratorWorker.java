@@ -13,7 +13,7 @@ import java.util.List;
  * <P>Thread to handle file generation from files found from {@link com.scires.netgen.ParserWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.1.0
+ * @version 0.1.1
  */
 public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 	private String inputDirectory	= null;

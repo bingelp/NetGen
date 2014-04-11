@@ -34,7 +34,6 @@ public class DB {
 	public static final String colLineNumber	= "LINE_NUMBER";
 	public static final String colTarget		= "TARGET";
 	public static final String colReplacement	= "REPLACEMENT";
-	public static final String colHost			= "HOST";
 
 	public void reset(){
 		String query =
@@ -50,8 +49,7 @@ public class DB {
 					"FOREIGN KEY (" + colFileID + ") REFERENCES Files(" + colID + ")," +
 					colLineNumber + " INT NOT NULL," +
 					colTarget + " VARCHAR(255) NOT NULL," +
-					colReplacement + " VARCHAR(255)," +
-					colHost + " BOOLEAN DEFAULT FALSE NOT NULL);";
+					colReplacement + " VARCHAR(255));";
 		execute(query, QUERY_TYPE_WRITE);
 	}
 
@@ -96,7 +94,6 @@ public class DB {
 			}
 		}
 	}
-
 	private boolean isConnected(){
 		boolean connected = (connection != null);
 		if (connected) {
@@ -141,14 +138,14 @@ public class DB {
 
 		return output;
 	}
+
 	public int saveFile(String fileName){
 		String query =
 			"INSERT INTO " + tableFiles + " (" + colInputFileName + c + colOutputFileName +
 			") VALUES ('" + fileName + "'" + c + "'" + fileName + "');";
 		return(int)execute(query, QUERY_TYPE_WRITE);
 	}
-
-	public void saveItem(String fileName, int Line_Number, String Target, boolean host){
+	public void saveItem(String fileName, int Line_Number, String Target){
 		String query = "SELECT " + colID + " FROM " + tableFiles + " WHERE " + colInputFileName + "='" + fileName + "'";
 		ArrayList<Map<String, String>> rows = (ArrayList<Map<String, String>>)execute(query, QUERY_TYPE_READ);
 		String File_ID = null;
@@ -158,13 +155,14 @@ public class DB {
 		if(File_ID != null) {
 			query =
 				"INSERT INTO " + tableItems +
-				"(" + colFileID + c + colLineNumber + c + colTarget + c + colHost + ")" +
-				"VALUES ('" + File_ID + "', '" + String.valueOf(Line_Number) + "', '" + Target +"', " + host + ");";
+				"(" + colFileID + c + colLineNumber + c + colTarget + ")" +
+				"VALUES ('" + File_ID + "', '" + String.valueOf(Line_Number) + "', '" + Target +"');";
 			int result = (int)execute(query, QUERY_TYPE_WRITE);
 			if(result != 1)
 				new ErrorDialog("Error saving item");
 		}
 	}
+
 	public void setOutputFileName(ArrayList<Location> locations, String outputFileName){
 		String query =
 			"UPDATE " + tableFiles + " SET " + colOutputFileName + " = '" + outputFileName +
@@ -203,7 +201,7 @@ public class DB {
 		String query =
 			"SELECT " + tableItems + d + colID + c +tableFiles + d + colInputFileName + c +
 					tableFiles + d + colOutputFileName + c + tableItems + d + colLineNumber + c +
-					tableItems + d + colTarget + c + tableItems + d + colReplacement + c + tableItems + d + colHost +
+					tableItems + d + colTarget + c + tableItems + d + colReplacement +
 			" FROM " + tableItems +
 			" INNER JOIN " + tableFiles + " ON " + tableFiles + d + colID + " = " + tableItems + d + colFileID +
 			" WHERE " + tableItems + d + colTarget + " != " + tableItems + d + colReplacement + ";";

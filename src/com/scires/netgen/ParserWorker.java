@@ -105,17 +105,17 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 				text=text.trim();
 				if(!isComment(text)){
 					switch(getCommand(text)){
-						case 0: processGlobal(text, "Domain Name", ElementPanel.NOT_BLANK);
+						case 0: processGlobal(text, "Domain Name", NetGen.REGEX_NOT_BLANK);
 							break;
-						case 1: processGlobal(text, "Name Server", ElementPanel.IP_HOST);
+						case 1: processGlobal(text, "Name Server", NetGen.REGEX_IP_HOST);
 							break;
-						case 2: processGlobal(text, "Secret", ElementPanel.COC_PWD);
+						case 2: processGlobal(text, "Secret", NetGen.REGEX_COC_PWD);
 							break;
 						case 3: processCredentials(text);
 							break;
 						case 4: processKeyChain();
 							break;
-						case 5: processGlobal(text, "VTP Password", ElementPanel.NOT_BLANK);
+						case 5: processGlobal(text, "VTP Password", NetGen.REGEX_NOT_BLANK);
 							break;
 						case 6: processInterface(text);
 							break;
@@ -162,13 +162,13 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 		boolean out = false; if (line.startsWith("!")){ out = true;} return out;}
 
 	private void processGlobal(String line, String labelText, String regex){
-		markElement(null, line.split(SPACE)[2], labelText, labelText, regex, false);
+		markElement(null, line.split(SPACE)[2], labelText, labelText, regex);
 		containerize(null, ContainerPanel.GLOBAL);
 	}
 	private void processCredentials(String line){
 		String[] split = line.split(SPACE);
-		markElement(null, split[1], "Username", "Username", ElementPanel.NOT_BLANK, false);
-		markElement(null, split[3], "Password", "Password", ElementPanel.COC_PWD, false);
+		markElement(null, split[1], "Username", "Username", NetGen.REGEX_NOT_BLANK);
+		markElement(null, split[3], "Password", "Password", NetGen.REGEX_COC_PWD);
 		containerize(null, ContainerPanel.GLOBAL);
 	}
 	private void processKeyChain(){
@@ -191,7 +191,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 					//accept-lifetime  send-lifetime
 				}else if(line.startsWith(commands[2]) || split[0].matches(commands[3])){
 					//parse out the start and end times
-					Matcher m = Pattern.compile(ElementPanel.KEY_TIME)
+					Matcher m = Pattern.compile(NetGen.REGEX_KEY_TIME)
 							.matcher(line);
 					String startDate=null, endDate=null;
 					if( m.find() ){
@@ -201,8 +201,8 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 
 					//make gui elements for both fields
 					if(startDate != null && endDate != null){
-						markElement(new RouterDatePicker(), startDate, "Begin Life", "Start Life", ElementPanel.KEY_TIME, false);
-						markElement(new RouterDatePicker(), endDate, "End Life", "End Life", ElementPanel.KEY_TIME, false);
+						markElement(new RouterDatePicker(), startDate, "Begin Life", "Start Life", NetGen.REGEX_KEY_TIME);
+						markElement(new RouterDatePicker(), endDate, "End Life", "End Life", NetGen.REGEX_KEY_TIME);
 						containerize(keyNumber, ContainerPanel.KEY_CHAIN);
 					}
 				}
@@ -228,7 +228,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					markElement(null, split[2], name, name, ElementPanel.IP_HOST, false);
+					markElement(null, split[2], name, name, NetGen.REGEX_IP_HOST);
 					addedInterface=true;
 				}
 			}
@@ -256,10 +256,10 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 				split = line.split(SPACE);
 				this.reader.mark(BUFFER_SIZE);
 				if ( line.startsWith(commands[0]) ){
-					markElement(null, split[1],commands[0],commands[0]+split[1],ElementPanel.IP_GATEWAY, false);
+					markElement(null, split[1],commands[0],commands[0]+split[1],NetGen.REGEX_IP_GATEWAY);
 				}else if( line.startsWith(commands[1]) ){
 					String ip = split[split.length-1];
-					markElement(null, ip, commands[1], commands[1], ElementPanel.IP_HOST, false);
+					markElement(null, ip, commands[1], commands[1], NetGen.REGEX_IP_HOST);
 				}
 			}
 			containerize(routerNumber, ContainerPanel.ROUTER);
@@ -275,13 +275,13 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	}
 	private void processLogging(String line){
 		line = line.split(SPACE)[1];
-		if(line.matches(ElementPanel.IP_GENERIC)){
-			markElement(null, line, "Logging Server", "Logging Server", ElementPanel.IP_HOST, false);
+		if(line.matches(NetGen.REGEX_IP_GENERIC)){
+			markElement(null, line, "Logging Server", "Logging Server", NetGen.REGEX_IP_HOST);
 			containerize(null, ContainerPanel.GLOBAL);
 		}
 	}
 	private void processAccessList(String line){
-		if(line.matches(ElementPanel.IP_GENERIC_LINE)){
+		if(line.matches(NetGen.REGEX_IP_GENERIC_LINE)){
 			String[] split = line.split(SPACE);
 			final String permit = "permit";
 			final String deny	= "deny";
@@ -300,15 +300,15 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 						checked=false;
 						target=deny;
 					}
-					markElement(new JCheckBox("", checked), target, null, PERMIT_DENY, null, false);
+					markElement(new JCheckBox("", checked), target, null, PERMIT_DENY, null);
 				}
 				else if( word.matches("host") ){
-					markElement(null, split[++i], "host", "host" + reader.getLineNumber(), ElementPanel.IP_GENERIC, false);
+					markElement(null, split[++i], "host", "host" + reader.getLineNumber(), NetGen.REGEX_IP_GENERIC);
 				}
 				//network and subnet
-				else if( word.matches(ElementPanel.IP_GENERIC) ){
-					markElement(null, word, "network", "network" + reader.getLineNumber(), ElementPanel.IP_GENERIC, false);
-					markElement(null, split[i++], "wildcard", "wildcard" + reader.getLineNumber(), ElementPanel.IP_GENERIC, false);
+				else if( word.matches(NetGen.REGEX_IP_GENERIC) ){
+					markElement(null, word, "network", "network" + reader.getLineNumber(), NetGen.REGEX_IP_GENERIC);
+					markElement(null, split[i++], "wildcard", "wildcard" + reader.getLineNumber(), NetGen.REGEX_IP_GENERIC);
 				}
 			}
 			containerize(fileName, ContainerPanel.ACCESS_LIST);
@@ -316,16 +316,16 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	}
 	private void processNTP(String line){
 		String[] split = line.split(SPACE);
-		markElement(null, split[2], "Peer", "Peer" + split[2], ElementPanel.IP_GENERIC, false);
+		markElement(null, split[2], "Peer", "Peer" + split[2], NetGen.REGEX_IP_GENERIC);
 		containerize(null, ContainerPanel.NTP_PEER);
 	}
 	private void processHostName(String line){
-		markElement(null, line.split(SPACE)[1], fileName, fileName, ElementPanel.NOT_BLANK, true);
+		markElement(null, line.split(SPACE)[1], fileName, fileName, NetGen.REGEX_NOT_BLANK);
 		containerize(null, ContainerPanel.HOST_NAME);
 	}
 
 
-	private void markElement(JComponent component, String target, String labelText, String type, String regex, boolean host){
+	private void markElement(JComponent component, String target, String labelText, String type, String regex){
 		if(component == null)
 			component = new JTextField(15);
 		Location l = new Location();
@@ -344,7 +344,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 			this.cp = new ContainerPanel();
 		this.cp.elements.put(type, ep);
 		this.cp.add(this.cp.elements.get(type));
-		db.saveItem(files[fileIndex],l.lineNumber,target, host);
+		db.saveItem(files[fileIndex],l.lineNumber,target);
 	}
 	private void containerize(String group, int tab){
 		String key = this.cp.elements.keySet().toString();

@@ -29,8 +29,14 @@ public class Generator{
 	public Generator(String inputDirectoryPath){
 		this.inputDirectory = new File(inputDirectoryPath);
 		dirExists = this.inputDirectory.exists() || this.inputDirectory.mkdir();
-		if(dirExists)
-			outputDirectory = new File(inputDirectoryPath + "\\" + IPGUI.GENERATED_FOLDER);
+		if(dirExists) {
+            outputDirectory = new File(inputDirectoryPath + "\\" + IPGUI.GENERATED_FOLDER);
+            if(!outputDirectory.exists()) {
+                boolean success = outputDirectory.mkdir();
+                if(!success)
+                    new ErrorDialog(TAG + "Error created 'Generated' directory");
+            }
+        }
 	}
 
 	public boolean isOpen(){

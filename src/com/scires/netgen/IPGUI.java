@@ -170,7 +170,7 @@ public class IPGUI extends JFrame {
 	public void hideGenerateButton(){
 		if(this.generateButton.getActionListeners().length == 1) {
 			this.generateButton.setText("Fix errors before continuing");
-			this.generateButton.setBackground(ElementPanel.COLOR_ERROR);
+			this.generateButton.setBackground(NetGen.COLOR_ERROR);
 			this.generateButton.removeActionListener(generateAction);
 		}
 	}
@@ -241,7 +241,7 @@ public class IPGUI extends JFrame {
 				JScrollPane scrollPane = new JScrollPane(tab);
 				tabs.add(tab);
 				tabbedPane.addTab(f.getName(), null, scrollPane, f.getName());
-				tabbedPane.setBackgroundAt(tabbedPane.getTabCount()-1, ElementPanel.COLOR_DEFAULT);
+				tabbedPane.setBackgroundAt(tabbedPane.getTabCount()-1, NetGen.COLOR_DEFAULT);
 			}
 		}
 		badFields = new int[tabs.size()];
