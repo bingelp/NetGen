@@ -25,15 +25,15 @@ public class DB {
 
 	public static final String c				= ",";
 	public static final String d				= ".";
-	public static final String tableFiles		= "FILES";
-	public static final String tableItems		= "ITEMS";
+	public static final String tableFiles	   = "FILES";
+	public static final String tableItems	   = "ITEMS";
 	public static final String colID			= "ID";
 	public static final String colInputFileName = "INPUT_FILE_NAME";
 	public static final String colOutputFileName= "OUTPUT_FILE_NAME";
 	public static final String colFileID		= "FILE_ID";
 	public static final String colLineNumber	= "LINE_NUMBER";
 	public static final String colTarget		= "TARGET";
-	public static final String colReplacement	= "REPLACEMENT";
+	public static final String colReplacement   = "REPLACEMENT";
 
 	public void reset(){
 		String query =

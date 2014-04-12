@@ -22,20 +22,20 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 	public static String ERROR = "Error: ";
 	private static int BUFFER_SIZE = 1000;
 	private static String[] COMMAND_LIST =
-        {
-            "ip domain-name",
-            "ip name-server",
-            "enable secret",
-            "username",
-            "key chain",
-            "vtp password",
-            "interface",
-            "router",
-            "logging",
-            "access-list",
-            "ntp peer",
-            "hostname"
-        };
+		{
+			"ip domain-name",
+			"ip name-server",
+			"enable secret",
+			"username",
+			"key chain",
+			"vtp password",
+			"interface",
+			"router",
+			"logging",
+			"access-list",
+			"ntp peer",
+			"hostname"
+		};
 	private File directory = null;
 	private String inputPath;
 	private String fileName = null;

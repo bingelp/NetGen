@@ -10,7 +10,6 @@ import javax.swing.*;
  * @version 0.0.1
  */
 public class ErrorDialog extends JFrame {
-
 	public ErrorDialog(String errorText){
 		JOptionPane.showMessageDialog(this, errorText, "Error", JOptionPane.ERROR_MESSAGE);
 	}
