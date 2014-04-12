@@ -49,10 +49,10 @@ public class Generator{
 		writer = null;
 	}
 	public void write(Map<String, String> item){
-		goToLine(Integer.valueOf(item.get(DB.colLineNumber)));
+		goToLine(Integer.valueOf(item.get(DB.COL_LINE_NUMBER)));
 		try{
 			String line = reader.readLine() + lineSeparator;
-			line = line.replace(item.get(DB.colTarget), item.get(DB.colReplacement));
+			line = line.replace(item.get(DB.COL_TARGET), item.get(DB.COL_REPLACEMENT));
 			writer.write(line.getBytes());
 		}catch (Exception e){
 			new ErrorDialog(TAG + e.getMessage());
@@ -60,8 +60,8 @@ public class Generator{
 	}
 
 	public void open(Map<String, String> item){
-		inputFilePath = this.inputDirectory.getAbsolutePath() + "\\" + item.get(DB.colInputFileName);
-		outputFilePath =  this.outputDirectory.getAbsolutePath() + "\\" + item.get(DB.colOutputFileName);
+		inputFilePath = this.inputDirectory.getAbsolutePath() + "\\" + item.get(DB.COL_INPUT_FILE_NAME);
+		outputFilePath =  this.outputDirectory.getAbsolutePath() + "\\" + item.get(DB.COL_OUTPUT_FILE_NAME);
 
 		tempOutputFilePath = outputFilePath + ".tmp";
 		try{

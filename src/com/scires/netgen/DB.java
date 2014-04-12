@@ -17,39 +17,38 @@ import org.h2.tools.Server;
 
 @SuppressWarnings("unchecked")
 public class DB {
-	private String TAG 							= "DB ";
-	private Connection connection 				= null;
-	private Server server						= null;
-	private static final int QUERY_TYPE_READ	= 0;
-	private static final int QUERY_TYPE_WRITE	= 1;
-
-	public static final String c				= ",";
-	public static final String d				= ".";
-	public static final String tableFiles	   = "FILES";
-	public static final String tableItems	   = "ITEMS";
-	public static final String colID			= "ID";
-	public static final String colInputFileName = "INPUT_FILE_NAME";
-	public static final String colOutputFileName= "OUTPUT_FILE_NAME";
-	public static final String colFileID		= "FILE_ID";
-	public static final String colLineNumber	= "LINE_NUMBER";
-	public static final String colTarget		= "TARGET";
-	public static final String colReplacement   = "REPLACEMENT";
+	private String TAG								= "DB ";
+	private Connection connection					= null;
+	private Server server							= null;
+	private static final int QUERY_TYPE_READ		= 0;
+	private static final int QUERY_TYPE_WRITE		= 1;
+	public static final String C					= ",";
+	public static final String D					= ".";
+	public static final String TABLE_FILES			= "FILES";
+	public static final String TABLE_ITEMS			= "ITEMS";
+	public static final String COL_ID				= "ID";
+	public static final String COL_INPUT_FILE_NAME	= "INPUT_FILE_NAME";
+	public static final String COL_OUTPUT_FILE_NAME	= "OUTPUT_FILE_NAME";
+	public static final String COL_FILE_ID			= "FILE_ID";
+	public static final String COL_LINE_NUMBER		= "LINE_NUMBER";
+	public static final String COL_TARGET			= "TARGET";
+	public static final String COL_REPLACEMENT		= "REPLACEMENT";
 
 	public void reset(){
 		String query =
-				"DROP TABLE IF EXISTS " + tableFiles + ";" +
-				"DROP TABLE IF EXISTS " + tableItems + ";" +
-				"CREATE TABLE " + tableFiles + "(" +
-					colID + " INT NOT NULL PRIMARY KEY AUTO_INCREMENT," +
-					colInputFileName + " VARCHAR(255) UNIQUE," +
-					colOutputFileName + " VARCHAR(255) UNIQUE);" +
+				"DROP TABLE IF EXISTS " + TABLE_FILES + ";" +
+				"DROP TABLE IF EXISTS " + TABLE_ITEMS + ";" +
+				"CREATE TABLE " + TABLE_FILES + "(" +
+						COL_ID + " INT NOT NULL PRIMARY KEY AUTO_INCREMENT," +
+						COL_INPUT_FILE_NAME + " VARCHAR(255) UNIQUE," +
+						COL_OUTPUT_FILE_NAME + " VARCHAR(255) UNIQUE);" +
 				"CREATE TABLE Items(" +
-					colID + " INT NOT NULL PRIMARY KEY AUTO_INCREMENT," +
-					colFileID + " INT NOT NULL," +
-					"FOREIGN KEY (" + colFileID + ") REFERENCES Files(" + colID + ")," +
-					colLineNumber + " INT NOT NULL," +
-					colTarget + " VARCHAR(255) NOT NULL," +
-					colReplacement + " VARCHAR(255));";
+						COL_ID + " INT NOT NULL PRIMARY KEY AUTO_INCREMENT," +
+						COL_FILE_ID + " INT NOT NULL," +
+					"FOREIGN KEY (" + COL_FILE_ID + ") REFERENCES Files(" + COL_ID + ")," +
+						COL_LINE_NUMBER + " INT NOT NULL," +
+						COL_TARGET + " VARCHAR(255) NOT NULL," +
+						COL_REPLACEMENT + " VARCHAR(255));";
 		execute(query, QUERY_TYPE_WRITE);
 	}
 
@@ -141,12 +140,12 @@ public class DB {
 
 	public int saveFile(String fileName){
 		String query =
-			"INSERT INTO " + tableFiles + " (" + colInputFileName + c + colOutputFileName +
-			") VALUES ('" + fileName + "'" + c + "'" + fileName + "');";
+			"INSERT INTO " + TABLE_FILES + " (" + COL_INPUT_FILE_NAME + C + COL_OUTPUT_FILE_NAME +
+			") VALUES ('" + fileName + "'" + C + "'" + fileName + "');";
 		return(int)execute(query, QUERY_TYPE_WRITE);
 	}
 	public void saveItem(String fileName, int Line_Number, String Target){
-		String query = "SELECT " + colID + " FROM " + tableFiles + " WHERE " + colInputFileName + "='" + fileName + "'";
+		String query = "SELECT " + COL_ID + " FROM " + TABLE_FILES + " WHERE " + COL_INPUT_FILE_NAME + "='" + fileName + "'";
 		ArrayList<Map<String, String>> rows = (ArrayList<Map<String, String>>)execute(query, QUERY_TYPE_READ);
 		String File_ID = null;
 		if(rows.size() == 1){
@@ -154,8 +153,8 @@ public class DB {
 		}
 		if(File_ID != null) {
 			query =
-				"INSERT INTO " + tableItems +
-				"(" + colFileID + c + colLineNumber + c + colTarget + ")" +
+				"INSERT INTO " + TABLE_ITEMS +
+				"(" + COL_FILE_ID + C + COL_LINE_NUMBER + C + COL_TARGET + ")" +
 				"VALUES ('" + File_ID + "', '" + String.valueOf(Line_Number) + "', '" + Target +"');";
 			int result = (int)execute(query, QUERY_TYPE_WRITE);
 			if(result != 1)
@@ -165,25 +164,25 @@ public class DB {
 
 	public void setOutputFileName(ArrayList<Location> locations, String outputFileName){
 		String query =
-			"UPDATE " + tableFiles + " SET " + colOutputFileName + " = '" + outputFileName +
-			"' WHERE " + colID + " IN";
+			"UPDATE " + TABLE_FILES + " SET " + COL_OUTPUT_FILE_NAME + " = '" + outputFileName +
+			"' WHERE " + COL_ID + " IN";
 		String fileIDRange = "(";
 		for (Location l : locations)
-			fileIDRange += l.fileIndex+1 + c;
+			fileIDRange += l.fileIndex+1 + C;
 		StringBuilder temp = new StringBuilder(fileIDRange);
-		temp.setCharAt(fileIDRange.lastIndexOf(c), ')');
+		temp.setCharAt(fileIDRange.lastIndexOf(C), ')');
 		fileIDRange = temp.toString();
 		query += fileIDRange + ";";
 		execute(query, QUERY_TYPE_WRITE);
 	}
 	public void setReplacement(ArrayList<Location> locations, String replacement, String target){
 		String query =
-				"UPDATE " + tableItems + " SET " + colReplacement + " = '" + replacement +  "' WHERE " + colFileID + " IN";
+				"UPDATE " + TABLE_ITEMS + " SET " + COL_REPLACEMENT + " = '" + replacement +  "' WHERE " + COL_FILE_ID + " IN";
 		String fileIDRange = "(";
 		String lineNumberRange = fileIDRange;
 		for(Location l : locations){
-			fileIDRange += l.fileIndex+1 + c;
-			lineNumberRange += l.lineNumber + c;
+			fileIDRange += l.fileIndex+1 + C;
+			lineNumberRange += l.lineNumber + C;
 		}
 		StringBuilder temp = new StringBuilder(fileIDRange);
 		temp.setCharAt(fileIDRange.lastIndexOf(','), ')');
@@ -191,7 +190,7 @@ public class DB {
 		temp = new StringBuilder(lineNumberRange);
 		temp.setCharAt(lineNumberRange.lastIndexOf(','), ')');
 		lineNumberRange = temp.toString();
-		query += fileIDRange + " AND " + colLineNumber + " IN " + lineNumberRange + "AND " + colTarget + " = '" + target + "';";
+		query += fileIDRange + " AND " + COL_LINE_NUMBER + " IN " + lineNumberRange + "AND " + COL_TARGET + " = '" + target + "';";
 		int result = (int)execute(query, QUERY_TYPE_WRITE);
 		if(result == 0)
 			new ErrorDialog("DB write failed");
@@ -199,12 +198,12 @@ public class DB {
 
 	public ArrayList<Map<String, String>> getItemsToGenerate(){
 		String query =
-			"SELECT " + tableItems + d + colID + c +tableFiles + d + colInputFileName + c +
-					tableFiles + d + colOutputFileName + c + tableItems + d + colLineNumber + c +
-					tableItems + d + colTarget + c + tableItems + d + colReplacement +
-			" FROM " + tableItems +
-			" INNER JOIN " + tableFiles + " ON " + tableFiles + d + colID + " = " + tableItems + d + colFileID +
-			" WHERE " + tableItems + d + colTarget + " != " + tableItems + d + colReplacement + ";";
+			"SELECT " + TABLE_ITEMS + D + COL_ID + C + TABLE_FILES + D + COL_INPUT_FILE_NAME + C +
+					TABLE_FILES + D + COL_OUTPUT_FILE_NAME + C + TABLE_ITEMS + D + COL_LINE_NUMBER + C +
+					TABLE_ITEMS + D + COL_TARGET + C + TABLE_ITEMS + D + COL_REPLACEMENT +
+			" FROM " + TABLE_ITEMS +
+			" INNER JOIN " + TABLE_FILES + " ON " + TABLE_FILES + D + COL_ID + " = " + TABLE_ITEMS + D + COL_FILE_ID +
+			" WHERE " + TABLE_ITEMS + D + COL_TARGET + " != " + TABLE_ITEMS + D + COL_REPLACEMENT + ";";
 		return (ArrayList<Map<String, String>>)execute(query, QUERY_TYPE_READ);
 	}
 	private ArrayList<Map<String, String>> ResultSet2ArrayList(ResultSet rs){

@@ -43,8 +43,8 @@ public class GeneratorWorker extends SwingWorker<Integer, Integer>{
 		String FileID = "";
 		Generator generator = new Generator(this.inputDirectory);
 		for(Map<String, String> item : items){
-			if (!item.get(DB.colID).matches(FileID)) {
-				FileID = item.get(DB.colID);
+			if (!item.get(DB.COL_ID).matches(FileID)) {
+				FileID = item.get(DB.COL_ID);
 				if(generator.isOpen()){
 					generator.close();
 				}
