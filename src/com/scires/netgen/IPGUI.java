@@ -235,17 +235,64 @@ public class IPGUI extends JFrame {
         this.add(tabbedPane, BorderLayout.CENTER);
         tabs = new ArrayList<>();
         int mod = (Modifier.FINAL + Modifier.STATIC);
+        String name;
         for(Field f : NetGen.class.getDeclaredFields()){
             if( f.getModifiers() == mod && f.getType() == int.class){
                 JPanel tab = new JPanel();
                 tab.setLayout(new BoxLayout(tab, BoxLayout.PAGE_AXIS));
                 JScrollPane scrollPane = new JScrollPane(tab);
                 tabs.add(tab);
-                tabbedPane.addTab(f.getName(), null, scrollPane, f.getName());
+                name = toCamelCase(f.getName());
+                tabbedPane.addTab(name, null, scrollPane, name);
                 tabbedPane.setBackgroundAt(tabbedPane.getTabCount()-1, NetGen.COLOR_DEFAULT);
             }
         }
         badFields = new int[tabs.size()];
+    }
+    private String toCamelCase(String s){
+        String [] parts = s.split("_");
+        String output = "";
+        for(String part : parts) {
+            if ( hasVowel(part) )
+                output += part.substring(0, 1) + part.substring(1).toLowerCase() + " ";
+            else
+                output += part + " ";
+        }
+        StringBuilder sb = new StringBuilder(output);
+        sb.deleteCharAt(output.length()-1);
+        output = sb.toString();
+        return output;
+    }
+    private boolean hasVowel(String s){
+        char c;
+        boolean hasVowel = false;
+        int length = s.length();
+        for(int i=0; i<length; i++){
+            c = s.charAt(i);
+            switch (c){
+                case 'A':
+                    hasVowel = true;
+                    i=length;
+                    break;
+                case 'E':
+                    hasVowel = true;
+                    i=length;
+                    break;
+                case 'I':
+                    hasVowel = true;
+                    i=length;
+                    break;
+                case 'O':
+                    hasVowel = true;
+                    i=length;
+                    break;
+                case 'U':
+                    hasVowel = true;
+                    i=length;
+                    break;
+            }
+        }
+        return hasVowel;
     }
 
 
