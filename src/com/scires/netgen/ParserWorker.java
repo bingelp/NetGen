@@ -18,9 +18,9 @@ import java.util.regex.Pattern;
  */
 public class ParserWorker extends SwingWorker<Integer, Integer> {
 
-    public static String SPACE = "\\s";
-    public static String ERROR = "Error: ";
-    private static int BUFFER_SIZE = 1000;
+    public static String SPACE                      = "\\s";
+    public static String ERROR                      = "Error: ";
+    private static int BUFFER_SIZE                  = 1000;
     private static String[] COMMAND_LIST =
         {
             "ip domain-name",
@@ -36,14 +36,14 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
             "ntp peer",
             "hostname"
         };
-    private File directory = null;
+    private File directory                          = null;
     private String inputPath;
-    private String fileName = null;
-    public String[] files = null;
-    private LineNumberReader reader = null;
-    private int fileIndex = 0;
-    public Map<String, ContainerPanel> containers = null;
-    public ContainerPanel cp = null;
+    private String fileName                         = null;
+    public String[] files                           = null;
+    private LineNumberReader reader                 = null;
+    private int fileIndex                           = 0;
+    public Map<String, ContainerPanel> containers   = null;
+    public ContainerPanel cp                        = null;
     public ProgressWindow progressWindow;
     private DB db;
 
@@ -63,11 +63,11 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
             FilenameFilter noGenerateFolder = new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    boolean accepted = true;
-                    if(name.matches(IPGUI.GENERATED_FOLDER))
-                        accepted = false;
+                boolean accepted = true;
+                if(name.matches(IPGUI.GENERATED_FOLDER))
+                    accepted = false;
 
-                    return accepted;
+                return accepted;
                 }
             };
             files=directory.list(noGenerateFolder);
@@ -163,20 +163,19 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 
     private void processGlobal(String line, String labelText, String regex){
         markElement(null, line.split(SPACE)[2], labelText, labelText, regex);
-        containerize(null, ContainerPanel.GLOBAL);
+        containerize(null, NetGen.GLOBAL);
     }
     private void processCredentials(String line){
         String[] split = line.split(SPACE);
         markElement(null, split[1], "Username", "Username", NetGen.REGEX_NOT_BLANK);
         markElement(null, split[3], "Password", "Password", NetGen.REGEX_COC_PWD);
-        containerize(null, ContainerPanel.GLOBAL);
+        containerize(null, NetGen.GLOBAL);
     }
     private void processKeyChain(){
         String line;
         String[] split;
         String[] commands = {"key ", "key-string", "accept-lifetime", "send-lifetime"};
         try{
-
             String keyNumber = "";
             while ((line = this.reader.readLine()).startsWith(" ")){
                 line = line.trim();
@@ -203,7 +202,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
                     if(startDate != null && endDate != null){
                         markElement(new RouterDatePicker(), startDate, "Begin Life", "Start Life", NetGen.REGEX_KEY_TIME);
                         markElement(new RouterDatePicker(), endDate, "End Life", "End Life", NetGen.REGEX_KEY_TIME);
-                        containerize(keyNumber, ContainerPanel.KEY_CHAIN);
+                        containerize(keyNumber, NetGen.KEY_CHAIN);
                     }
                 }
             }
@@ -236,7 +235,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
             System.out.println("Interface: " + ERROR + e.getMessage());
         } finally{
             if( addedInterface ){
-                containerize(fileName, ContainerPanel.INTERFACE);
+                containerize(fileName, NetGen.INTERFACE);
                 try{
                     this.reader.reset();
                 } catch(Exception e){
@@ -262,7 +261,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
                     markElement(null, ip, commands[1], commands[1], NetGen.REGEX_IP_HOST);
                 }
             }
-            containerize(routerNumber, ContainerPanel.ROUTER);
+            containerize(routerNumber, NetGen.ROUTER);
         } catch(Exception e){
             System.out.println(ERROR + e.getMessage());
         } finally{
@@ -277,7 +276,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
         line = line.split(SPACE)[1];
         if(line.matches(NetGen.REGEX_IP_GENERIC)){
             markElement(null, line, "Logging Server", "Logging Server", NetGen.REGEX_IP_HOST);
-            containerize(null, ContainerPanel.GLOBAL);
+            containerize(null, NetGen.GLOBAL);
         }
     }
     private void processAccessList(String line){
@@ -311,17 +310,17 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
                     markElement(null, split[i++], "wildcard", "wildcard" + reader.getLineNumber(), NetGen.REGEX_IP_GENERIC);
                 }
             }
-            containerize(fileName, ContainerPanel.ACCESS_LIST);
+            containerize(fileName, NetGen.ACCESS_LIST);
         }
     }
     private void processNTP(String line){
         String[] split = line.split(SPACE);
         markElement(null, split[2], "Peer", "Peer" + split[2], NetGen.REGEX_IP_GENERIC);
-        containerize(null, ContainerPanel.NTP_PEER);
+        containerize(null, NetGen.NTP_PEER);
     }
     private void processHostName(String line){
         markElement(null, line.split(SPACE)[1], fileName, fileName, NetGen.REGEX_NOT_BLANK);
-        containerize(null, ContainerPanel.HOST_NAME);
+        containerize(null, NetGen.HOST_NAME);
     }
 
 

@@ -16,7 +16,7 @@ import java.util.Date;
 public class RouterDatePicker extends JXDatePicker {
     public static String ROUTER_DATE_FORMAT = "HH:mm:ss MMM d yyyy";
     private SimpleDateFormat sdf;
-    private static String TAG = " :: RouterDatePicker";
+    private static String TAG               = " :: RouterDatePicker";
 
     public RouterDatePicker(){
         sdf = new SimpleDateFormat(ROUTER_DATE_FORMAT);

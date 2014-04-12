@@ -13,6 +13,13 @@ import java.awt.*;
 public class NetGen {
     public final static String PROGRAM_NAME             = "Netgen";
     public final static String PROGRAM_VERSION          = "0.1.1";
+    static final int GLOBAL                             = 0; //Domain name, name server, secret, username, pwd, vtp pwd, logging
+    static final int HOST_NAME                          = 1;
+    static final int KEY_CHAIN                          = 2;
+    static final int INTERFACE                          = 3;
+    static final int ROUTER                             = 4;
+    static final int ACCESS_LIST                        = 5;
+    static final int NTP_PEER                           = 6;
     public final static Color COLOR_ERROR               = new Color(255, 75, 75);
     public final static Color COLOR_DEFAULT             = new Color(150, 200, 255);
     private static String REGEX_THREE_IP_OCTETS         =

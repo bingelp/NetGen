@@ -26,18 +26,18 @@ import java.util.Map;
  */
 public class IPGUI extends JFrame {
     private Map<String, PanelGroup> groups;
-    private ArrayList<JPanel> tabs                    = null;
-    public int[] badFields                            = null;
-    JTabbedPane tabbedPane                            = null;
-    JButton generateButton                            = null;
-    private ParserWorker parserWorker                = null;
-    private GeneratorWorker generatorWorker            = null;
-    public Map<String, ContainerPanel> containers    = null;
-    private ProgressWindow progressWindow            = null;
-    public File directory                            = null;
-    private ActionListener generateAction            = null;
-    public static Color GREEN                        = new Color(0, 255, 100);
-    public static String GENERATED_FOLDER = "Generated";
+    private ArrayList<JPanel> tabs                  = null;
+    public int[] badFields                          = null;
+    JTabbedPane tabbedPane                          = null;
+    JButton generateButton                          = null;
+    private ParserWorker parserWorker               = null;
+    private GeneratorWorker generatorWorker         = null;
+    public Map<String, ContainerPanel> containers   = null;
+    private ProgressWindow progressWindow           = null;
+    public File directory                           = null;
+    private ActionListener generateAction           = null;
+    public static Color GREEN                       = new Color(0, 255, 100);
+    public static String GENERATED_FOLDER           = "Generated";
     public DB db;
 
     public IPGUI(){
@@ -46,29 +46,29 @@ public class IPGUI extends JFrame {
         generateAction = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cleanDirectory();
-                progressWindow.reset(containers.size());
-                generatorWorker = new GeneratorWorker(directory, progressWindow, db);
-                generatorWorker.addPropertyChangeListener(new PropertyChangeListener() {
-                    @Override
-                    public void propertyChange(PropertyChangeEvent event) {
-                        switch (event.getPropertyName()) {
-                            case "state":
-                                switch ((SwingWorker.StateValue) event.getNewValue()) {
-                                    case DONE:
-                                        progressWindow.setVisible(false);
-                                        generatorWorker = null;
-                                        openDirectory();
-                                        break;
-                                    case STARTED:
-                                        progressWindow.setVisible(true);
-                                    case PENDING:
-                                        break;
-                                }
+            cleanDirectory();
+            progressWindow.reset(containers.size());
+            generatorWorker = new GeneratorWorker(directory, progressWindow, db);
+            generatorWorker.addPropertyChangeListener(new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent event) {
+                switch (event.getPropertyName()) {
+                    case "state":
+                        switch ((SwingWorker.StateValue) event.getNewValue()) {
+                            case DONE:
+                                progressWindow.setVisible(false);
+                                generatorWorker = null;
+                                openDirectory();
+                                break;
+                            case STARTED:
+                                progressWindow.setVisible(true);
+                            case PENDING:
                                 break;
                         }
-                    }
-                });
+                        break;
+                }
+                }
+            });
                 generatorWorker.execute();
             }
         };
@@ -97,8 +97,8 @@ public class IPGUI extends JFrame {
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                super.windowClosing(e);
-                db.disconnect();
+            super.windowClosing(e);
+            db.disconnect();
             }
         });
     }
@@ -111,29 +111,29 @@ public class IPGUI extends JFrame {
         parserWorker.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent event) {
-                switch (event.getPropertyName()) {
-                    case "progress":
-                        progressWindow.setProgress((int)event.getNewValue());
-                        break;
-                    case "state":
-                        switch ((SwingWorker.StateValue) event.getNewValue()) {
-                            case DONE:
-                                initTabs();
-                                containers = parserWorker.containers;
-                                for (ContainerPanel cp : containers.values()) {
-                                    addPanel(cp);
-                                }
-                                generateButton.setVisible(true);
-                                progressWindow.setVisible(false);
-                                parserWorker = null;
-                                break;
-                            case STARTED:
-                                progressWindow.setVisible(true);
-                            case PENDING:
-                                break;
-                        }
-                        break;
-                }
+            switch (event.getPropertyName()) {
+                case "progress":
+                    progressWindow.setProgress((int)event.getNewValue());
+                    break;
+                case "state":
+                    switch ((SwingWorker.StateValue) event.getNewValue()) {
+                        case DONE:
+                            initTabs();
+                            containers = parserWorker.containers;
+                            for (ContainerPanel cp : containers.values()) {
+                                addPanel(cp);
+                            }
+                            generateButton.setVisible(true);
+                            progressWindow.setVisible(false);
+                            parserWorker = null;
+                            break;
+                        case STARTED:
+                            progressWindow.setVisible(true);
+                        case PENDING:
+                            break;
+                    }
+                    break;
+            }
             }
         });
         cleanDirectory();
@@ -234,8 +234,9 @@ public class IPGUI extends JFrame {
         tabbedPane = new JTabbedPane();
         this.add(tabbedPane, BorderLayout.CENTER);
         tabs = new ArrayList<>();
-        for(Field f : ContainerPanel.class.getDeclaredFields()){
-            if(f.getModifiers() == Modifier.STATIC){
+        int mod = (Modifier.FINAL + Modifier.STATIC);
+        for(Field f : NetGen.class.getDeclaredFields()){
+            if( f.getModifiers() == mod && f.getType() == int.class){
                 JPanel tab = new JPanel();
                 tab.setLayout(new BoxLayout(tab, BoxLayout.PAGE_AXIS));
                 JScrollPane scrollPane = new JScrollPane(tab);

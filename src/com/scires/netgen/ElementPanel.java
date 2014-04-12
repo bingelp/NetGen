@@ -159,7 +159,7 @@ public class ElementPanel extends MinimumPanel {
             if(valid) {
                 i.db.setReplacement(locations, text, this.target);
                 ContainerPanel cp = (ContainerPanel)this.getParent();
-                if(cp.tab == ContainerPanel.HOST_NAME) {
+                if(cp.tab == NetGen.HOST_NAME) {
                         i.db.setOutputFileName(locations, text+".txt");
                 }
             }
