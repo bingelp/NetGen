@@ -73,7 +73,7 @@ public class DB {
 		if(!connected){
 			try {
 				if(startServer()) {
-					connection = DriverManager.getConnection("jdbc:h2:~/test", "sa", "");
+					connection = DriverManager.getConnection("jdbc:h2:~/"+NetGen.PROGRAM_NAME, "sa", "");
 					connected = !connection.isClosed();
 				}
 			} catch (Exception e) {

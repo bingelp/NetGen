@@ -8,11 +8,11 @@ import java.awt.*;
  * <P>Application to import and edit Cisco configuration files</P>
  *
  * @author Justin Robinson
- * @version 0.0.5
+ * @version 0.0.6
  */
 public class NetGen {
-    public final static String programName = "Netgen";
-    public final static String version = "0.1.1";
+    public final static String PROGRAM_NAME = "Netgen";
+    public final static String PROGRAM_VERSION = "0.1.1";
     public final static Color COLOR_ERROR = new Color(255, 75, 75);
     public final static Color COLOR_DEFAULT = new Color(150, 200, 255);
     private static String REGEX_THREE_IP_OCTETS =

@@ -9,7 +9,7 @@ import java.awt.*;
  * <P>About window</P>
  *
  * @author Justin Robinson
- * @version 0.0.2
+ * @version 0.0.3
  */
 public class AboutWindow extends JDialog {
 	Container container;
@@ -35,7 +35,7 @@ public class AboutWindow extends JDialog {
 
 		JPanel panel = new JPanel();
 
-		JTextArea titleTextArea = new JTextArea(NetGen.programName + " " + NetGen.version);
+		JTextArea titleTextArea = new JTextArea(NetGen.PROGRAM_NAME + " " + NetGen.PROGRAM_VERSION);
 		titleTextArea.setEditable(false);
 		titleTextArea.setFont(titleFont);
 		titleTextArea.setBackground(this.getBackground());
