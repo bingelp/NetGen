@@ -35,7 +35,7 @@ public class RouterDatePicker extends JXDatePicker {
             try{
                 date = sdf.parse(routerTime);
             }catch (Exception e){
-                System.out.println(ParserWorker.ERROR + e.getMessage() + TAG);
+                System.out.println(Parser.ERROR + e.getMessage() + TAG);
             }
 
             if (date != null){

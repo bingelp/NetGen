@@ -50,7 +50,7 @@ public class AboutWindow extends JDialog {
         try{
             COCLogo = new ImageIcon(this.getClass().getResource("/images/COC_Logo200.png"));
         } catch (Exception e){
-            System.out.println(TAG + ParserWorker.ERROR + e.getMessage());
+            System.out.println(TAG + Parser.ERROR + e.getMessage());
         }
         JLabel COCLogoLabel = new JLabel(COCLogo);
 

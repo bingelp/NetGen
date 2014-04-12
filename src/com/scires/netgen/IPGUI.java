@@ -118,13 +118,14 @@ public class IPGUI extends JFrame {
                     switch ((SwingWorker.StateValue) event.getNewValue()) {
                         case DONE:
                             initTabs();
-                            containers = parserWorker.containers;
+                            containers = parserWorker.getContainers();
                             for (ContainerPanel cp : containers.values()) {
                                 addPanel(cp);
                             }
                             generateButton.setVisible(true);
                             progressWindow.setVisible(false);
-                            parserWorker = null;
+                            parserWorker.close();
+                            parserWorker=null;
                             break;
                         case STARTED:
                             progressWindow.setVisible(true);
@@ -308,7 +309,7 @@ public class IPGUI extends JFrame {
             try{
                 Desktop.getDesktop().open(generatedDirectory);
             }catch (Exception e){
-                System.out.println(ParserWorker.ERROR + e.getMessage());
+                System.out.println(Parser.ERROR + e.getMessage());
             }
         }
     }

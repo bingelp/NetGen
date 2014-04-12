@@ -34,7 +34,7 @@ public class Generator{
             if(!outputDirectory.exists()) {
                 boolean success = outputDirectory.mkdir();
                 if(!success)
-                    new ErrorDialog(TAG + "Error created 'Generated' directory");
+                    new ErrorDialog(TAG + "Error created 'Generated' inputDirectoryPath");
             }
         }
     }
