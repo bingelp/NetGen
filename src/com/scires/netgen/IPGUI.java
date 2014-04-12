@@ -10,7 +10,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +21,7 @@ import java.util.Map;
  * changes using {@link com.scires.netgen.GeneratorWorker}</P>
  *
  * @author Justin Robinson
- * @version 0.0.9
+ * @version 0.0.10
  */
 public class IPGUI extends JFrame {
     private Map<String, PanelGroup> groups;
@@ -234,10 +233,9 @@ public class IPGUI extends JFrame {
         tabbedPane = new JTabbedPane();
         this.add(tabbedPane, BorderLayout.CENTER);
         tabs = new ArrayList<>();
-        int mod = (Modifier.FINAL + Modifier.STATIC);
         String name;
         for(Field f : NetGen.class.getDeclaredFields()){
-            if( f.getModifiers() == mod && f.getType() == int.class){
+            if( f.getName().startsWith("TAB_")){
                 JPanel tab = new JPanel();
                 tab.setLayout(new BoxLayout(tab, BoxLayout.PAGE_AXIS));
                 JScrollPane scrollPane = new JScrollPane(tab);
@@ -251,8 +249,10 @@ public class IPGUI extends JFrame {
     }
     private String toCamelCase(String s){
         String [] parts = s.split("_");
+        String part;
         String output = "";
-        for(String part : parts) {
+        for(int i=1; i<parts.length; i++){
+            part = parts[i];
             if ( hasVowel(part) )
                 output += part.substring(0, 1) + part.substring(1).toLowerCase() + " ";
             else

@@ -163,13 +163,13 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 
     private void processGlobal(String line, String labelText, String regex){
         markElement(null, line.split(SPACE)[2], labelText, labelText, regex);
-        containerize(null, NetGen.GLOBAL);
+        containerize(null, NetGen.TAB_GLOBAL);
     }
     private void processCredentials(String line){
         String[] split = line.split(SPACE);
         markElement(null, split[1], "Username", "Username", NetGen.REGEX_NOT_BLANK);
         markElement(null, split[3], "Password", "Password", NetGen.REGEX_COC_PWD);
-        containerize(null, NetGen.GLOBAL);
+        containerize(null, NetGen.TAB_GLOBAL);
     }
     private void processKeyChain(){
         String line;
@@ -202,7 +202,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
                     if(startDate != null && endDate != null){
                         markElement(new RouterDatePicker(), startDate, "Begin Life", "Start Life", NetGen.REGEX_KEY_TIME);
                         markElement(new RouterDatePicker(), endDate, "End Life", "End Life", NetGen.REGEX_KEY_TIME);
-                        containerize(keyNumber, NetGen.KEY_CHAIN);
+                        containerize(keyNumber, NetGen.TAB_KEY_CHAIN);
                     }
                 }
             }
@@ -235,7 +235,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
             System.out.println("Interface: " + ERROR + e.getMessage());
         } finally{
             if( addedInterface ){
-                containerize(fileName, NetGen.INTERFACE);
+                containerize(fileName, NetGen.TAB_INTERFACE);
                 try{
                     this.reader.reset();
                 } catch(Exception e){
@@ -261,7 +261,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
                     markElement(null, ip, commands[1], commands[1], NetGen.REGEX_IP_HOST);
                 }
             }
-            containerize(routerNumber, NetGen.ROUTER);
+            containerize(routerNumber, NetGen.TAB_ROUTER);
         } catch(Exception e){
             System.out.println(ERROR + e.getMessage());
         } finally{
@@ -276,7 +276,7 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
         line = line.split(SPACE)[1];
         if(line.matches(NetGen.REGEX_IP_GENERIC)){
             markElement(null, line, "Logging Server", "Logging Server", NetGen.REGEX_IP_HOST);
-            containerize(null, NetGen.GLOBAL);
+            containerize(null, NetGen.TAB_GLOBAL);
         }
     }
     private void processAccessList(String line){
@@ -310,17 +310,17 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
                     markElement(null, split[i++], "wildcard", "wildcard" + reader.getLineNumber(), NetGen.REGEX_IP_GENERIC);
                 }
             }
-            containerize(fileName, NetGen.ACCESS_LIST);
+            containerize(fileName, NetGen.TAB_ACCESS_LIST);
         }
     }
     private void processNTP(String line){
         String[] split = line.split(SPACE);
         markElement(null, split[2], "Peer", "Peer" + split[2], NetGen.REGEX_IP_GENERIC);
-        containerize(null, NetGen.NTP_PEER);
+        containerize(null, NetGen.TAB_NTP_PEER);
     }
     private void processHostName(String line){
         markElement(null, line.split(SPACE)[1], fileName, fileName, NetGen.REGEX_NOT_BLANK);
-        containerize(null, NetGen.HOST_NAME);
+        containerize(null, NetGen.TAB_HOST_NAME);
     }
 
 
