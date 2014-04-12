@@ -8,11 +8,11 @@ import java.awt.*;
  * <P>Application to import and edit Cisco configuration files</P>
  *
  * @author Justin Robinson
- * @version 0.0.7
+ * @version 0.0.8
  */
 public class NetGen {
-    public final static String PROGRAM_NAME             = "Netgen";
-    public final static String PROGRAM_VERSION          = "0.1.1";
+    public final static String PROGRAM_NAME             = "NetGen";
+    public final static String PROGRAM_VERSION          = "0.2.0";
     static final int TAB_GLOBAL                         = 0; //Domain name, name server, secret, username, pwd, vtp pwd, logging
     static final int TAB_HOST_NAME                      = 1;
     static final int TAB_KEY_CHAIN                      = 2;

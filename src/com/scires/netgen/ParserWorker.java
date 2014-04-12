@@ -10,7 +10,7 @@ import java.util.Map;
  * <P>Parser Thread to generate gui based on CISCO config files</P>
  *
  * @author Justin Robinson
- * @version 0.1.1
+ * @version 0.2.0
  *
  */
 public class ParserWorker extends SwingWorker<Integer, Integer> {
