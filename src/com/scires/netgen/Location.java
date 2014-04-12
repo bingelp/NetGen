@@ -9,10 +9,10 @@ package com.scires.netgen;
  * @version 0.0.3
  */
 public class Location {
-	public int fileIndex, lineNumber;
+    public int fileIndex, lineNumber;
 
-	public Location(){}
+    public Location(){}
 
-	public void setFileIndex(int fileIndex){this.fileIndex = fileIndex;}
-	public void setLineNumber(int lineNumber){this.lineNumber = lineNumber;}
+    public void setFileIndex(int fileIndex){this.fileIndex = fileIndex;}
+    public void setLineNumber(int lineNumber){this.lineNumber = lineNumber;}
 }
