@@ -12,7 +12,7 @@ import java.awt.*;
  */
 public class NetGen {
     public final static String PROGRAM_NAME             = "NetGen";
-    public final static String PROGRAM_VERSION          = "0.2.1";
+    public final static String PROGRAM_VERSION          = "0.2.2";
     static final int TAB_GLOBAL                         = 0; //Domain name, name server, secret, username, pwd, vtp pwd, logging
     static final int TAB_HOST_NAME                      = 1;
     static final int TAB_KEY_CHAIN                      = 2;
