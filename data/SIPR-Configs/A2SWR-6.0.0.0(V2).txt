@@ -1,0 +1,504 @@
+!###############################################
+!Modified by SPAWAR 04/01/13     6.0.0.0
+!###############################################
+!04/01/13 Condensed port configuration
+!04/01/13 Updated NTP information
+!04/01/13 Updated route authentication key expiration time
+!04/01/13 Added trunking on port F1/0
+!04/01/13 Removed Vlan 50
+!04/01/13 Changed VTP settings and changed VLAN Database
+!04/01/13 Added log statement in ACL 101 line deny udp any any eq tftp
+!04/01/13 Removed ACL 104 permit icmp any any echo-reply
+!04/01/13 Added Control Plane Policy
+!04/01/13 Added Management QoSpolicy
+!04/01/13 Removed no service dhcp command
+!04/01/13 Updated route authentication key expiration time
+!04/01/13 Removed ACL 100 & 110 
+!###############################################
+!
+!  NOTE: This command file consists of configuration commands for
+!  an initial setup of the device.  Ensure the switch or router is
+!  in the enable mode, and then transfer this text configuration
+!  file in sections to avoid line errors by copying and pasting faster
+!  than the CLI can receive it.
+!
+!  NOTE: Uploading this file a second time will result in errors or
+!  prompts being issued to the command line interface.
+!
+!  Developed on Cisco 3845, IOS Version 12.4(20)T
+!  IOS Image C3845-ADVENTERPRISEK9_IVS-M
+!
+!
+enable
+config t
+no service pad
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug uptime
+service timestamps log uptime
+service password-encryption
+ip domain name coc.usmc.smil.mil
+ip name-server 192.168.120.25
+ip tcp synwait-time 10
+ip multicast-routing
+ip ssh time-out 60
+ip ssh version 2
+ip tcp intercept list 120
+no ip http server
+no ip http secure-server 
+no ip source-route
+no service finger
+no cdp run
+no ip bootp server
+no ipv6 cef
+!
+hostname A2SWR
+!
+boot-start-marker
+boot-end-marker
+!
+!
+enable secret Vinson0)Marines!1
+!
+username marine password Vinson0)Marines!1
+!
+aaa new-model
+aaa authentication login default local
+!
+aaa authentication fail-message ^CYou have failed to pass AAA login requirements!^C
+!
+!
+aaa session-id common
+!
+class-map match-any routing
+match access-group name routertraffic
+!
+class-map match-any management
+match access-group name managementtraffic
+!
+class-map match-any catchall
+match access-group name catchalltraffic
+!
+policy-map QOSManagement
+ class management
+  police 5000000 1000000 conform-action transmit exceed-action drop
+class class-default
+  police 990000000 1000000 conform-action transmit exceed-action drop
+!
+policy-map controlplanepolicy
+ class routing
+  police rate 5000000 conform-action transmit exceed-action transmit
+ class management
+ police rate 5000000 conform-action transmit exceed-action transmit
+  class catchall
+ police rate 990000000 conform-action transmit exceed-action drop
+!
+control-plane
+service-policy input controlplanepolicy
+!
+!
+key chain COC
+ key 1
+   key-string COCkey1
+   accept-lifetime 00:00:00 Mar 1 2013 00:00:00 Sep 1 2013
+   send-lifetime 00:00:00 Mar 1 2013 00:00:00 Sep 1 2013
+ key 2
+   key-string COCkey2
+   accept-lifetime 00:00:00 Sep 1 2013 00:00:00 Mar 1 2014
+   send-lifetime 00:00:00 Sep 1 2013 00:00:00 Mar 1 2014
+ key 9999
+   key-string COCkey3
+   accept-lifetime 00:00:00 Mar 1 2013 infinite
+   send-lifetime 00:00:00 Mar 1 2013 infinite
+end
+!#################################################################
+!copy and paste these lines individually to anwer the confirmations
+!Delete existing vlan and vtp information
+!
+delete /force flash:vlan.dat
+!
+delete /force flash:vtp
+!#################################################################
+!
+!  Enter VLAN database configuration mode
+vlan database
+vtp domain COC
+vtp v2-mode
+vtp password VTPCOC
+vtp server
+vlan 10 name Active_Ports
+apply
+vlan 20 name Servers
+apply
+vlan 30 name Inactive_Ports
+apply
+vlan 40 name Trunking
+apply 
+vlan 60 name Management
+apply
+exit
+!
+conf t
+!
+!
+
+interface Loopback0
+ ip address 192.168.0.3 255.255.255.255
+!
+!
+interface GigabitEthernet0/0
+ description Connect to Ext Network
+ ip address 192.168.32.1 255.255.255.0
+ ip access-group 101 in
+ ip access-group 104 out
+ no ip redirects
+ no ip unreachables
+ no ip proxy-arp
+ ip authentication mode eigrp 101 md5
+ ip authentication key-chain eigrp 101 COC
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/1
+ no ip address
+ shutdown
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface Serial0/0/0
+ no ip address
+ shutdown
+ no fair-queue
+!
+interface Serial0/0/1
+ no ip address
+ shutdown
+!
+interface Serial0/1/0
+ no ip address
+ shutdown
+!
+interface Serial0/1/1
+ no ip address
+ shutdown
+!
+interface GigabitEthernet1/0
+ description SWR to A2SOS
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ service-policy input QOSManagement
+!
+interface FastEthernet1/0
+ description ESX-1U-Server-NIC2-Trunking-Vlan-Port
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface range FastEthernet1/1 - 15
+ description SPARE
+ switchport access vlan 30
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan10
+ ip address 192.168.110.3 255.255.255.0
+ no ip unreachables
+ no ip proxy-arp
+ ip authentication mode eigrp 101 md5
+ ip authentication key-chain eigrp 101 COC
+!
+interface Vlan20
+ ip address 192.168.120.3 255.255.255.0
+ no ip unreachables
+ no ip proxy-arp
+!
+interface Vlan60
+ ip address 192.168.160.3 255.255.255.0
+ ip access-group 110 out
+ ip access-group 100 in
+ no ip unreachables
+ no ip proxy-arp
+!
+router eigrp 101
+ network 192.168.32.0
+ network 192.168.110.0
+ network 192.168.120.0
+ passive-interface vlan20
+ no auto-summary
+!
+!
+logging trap debugging
+logging source-interface Loopback0
+logging 192.168.120.43
+!
+snmp-server group COCGroup v3 priv read COCview access 10
+snmp-server user root COCGroup v3 auth sha mypassword priv des mypassword
+snmp-server view COCview internet included
+snmp-server view COCview system included
+snmp-server view COCview interfaces included
+snmp-server view COCview chassis included
+snmp-server trap-source Loopback0
+!
+!
+banner login ^
+You are accessing a U.S. Government (USG) Information System (IS)
+that is provided for USG-authorized use only. By using this IS (which includes
+any device attached to this IS), you consent to the following conditions:
+- The USG routinely intercepts and monitors communications on this IS for
+purposes including, but not limited to, penetration testing, COMSEC monitoring,
+network operations and defense, personnel misconduct (PM), law enforcement (LE),
+and counterintelligence (CI) investigations. At any time, the USG may inspect
+and seize data stored on this IS. - Communications using, or data stored on,
+this IS are not private, are subject to routine monitoring, interception, and
+search, and may be disclosed or used for any USG authorized purpose. - This IS
+includes security measures (e.g., authentication and access controls) to protect
+USG interests--not for your personal benefit or privacy. - Notwithstanding the above,
+using this IS does not constitute consent to PM, LE or CI investigative searching or
+monitoring of the content of privileged communications, or work product, related
+to personal representation or services by attorneys, psychotherapists, or clergy,
+and their assistants. Such communications and work product are private and confidential.
+See User Agreement for details.
+
+
+
+^
+!
+!
+line con 0
+ login authentication default
+ exec-timeout 10 0
+ logging synchronous
+line aux 0
+ no exec
+ transport input none
+line vty 0 4
+ login authentication default
+ exec-timeout 10 0
+ transport input ssh
+ access-class 10 in
+ logging synchronous
+line vty 5 15
+ login authentication default
+ exec-timeout 10 0
+ transport input ssh
+ access-class 10 in
+ logging synchronous
+!
+ntp authentication-key 1 md5 NTPkey
+ntp authenticate
+ntp peer 192.168.110.8 key 1
+ntp peer 192.168.110.1 key 1
+ntp trusted-key 1
+!
+!
+!******************************
+!IP phone setup
+!******************************
+telephony-service setup
+n
+y
+192.168.110.6
+2000
+4
+y
+0
+0
+1000
+n
+n
+n
+!
+ip access-list ext routertraffic
+permit eigrp any any
+permit pim any any
+!
+ip access-list ext management
+permit tcp any any eq 22
+permit tcp any any eq 22 established
+permit udp any any eq snmp
+permit udp any any eq ntp
+!
+ip access-list ext catchall
+permit tcp any any
+permit udp any any
+permit icmp any any
+permit ip any any
+!
+access-list 10 remark apply to vty inbound interfaces
+access-list 10 permit 192.168.160.0 0.0.0.255 log
+access-list 10 permit host 192.168.110.27 log
+access-list 10 permit host 192.168.110.28 log
+access-list 10 permit host 192.168.120.43 log
+access-list 10 deny any log
+!
+!need to permit inbound authorized traffic as a last !statement otherwise most of the traffic will be denied
+!access-list 101 remark apply ACL 101 to external interfaces, !inbound
+access-list 101 remark TRINOO DDoS 
+access-list 101 deny ip  0.0.0.0 1.255.255.255 any log
+access-list 101 deny ip  2.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  5.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  7.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  10.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  14.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  23.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  27.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  31.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  36.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  37.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  39.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  42.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  46.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  49.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  50.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  100.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  101.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  102.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  103.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  104.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  105.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  106.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  107.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  127.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  169.254.0.0 0.0.255.255 any log
+access-list 101 deny ip  172.16.0.0 0.15.255.255 any log
+access-list 101 deny ip  176.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  177.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  179.0.0.0 0.255.255.255 any log
+access-list 101 deny ip  181.0.0.0 3.255.255.255 any log
+access-list 101 deny ip  185.0.0.0 3.255.255.255 any log
+access-list 101 deny ip  192.0.2.0 0.0.0.255 any log
+access-list 101 deny ip  192.168.0.0 0.0.255.255 any log
+access-list 101 deny ip  223.0.0.0 0.255.255.255 any log
+access-list 101 remark dening 224 will prevent multcast traffic from routing
+access-list 101 deny ip  224.0.0.0 31.255.255.255 any log
+access-list 101 deny tcp any any eq 27665 log
+access-list 101 deny udp any any eq 31335 log
+access-list 101 deny udp any any eq 27444 log
+access-list 101 remark Back Orifice DDoS:
+access-list 101 deny udp any any range 31337 31338 log
+access-list 101 remark Stacheldraht DDoS:
+access-list 101 deny tcp any any eq 16660 log
+access-list 101 deny tcp any any eq 65000 log
+access-list 101 remark TrinityV3 DDoS:
+access-list 101 deny tcp any any eq 33270 log
+access-list 101 deny tcp any any eq 39168 log
+access-list 101 remark T0rn rootkit DDoS:
+access-list 101 deny tcp any any eq 47017 log
+access-list 101 remark Subseven DDoS system and some variants:
+access-list 101 deny tcp any any range 6711 6712 log
+access-list 101 deny tcp any any eq 6776 log
+access-list 101 deny tcp any any eq 6669 log
+access-list 101 deny tcp any any eq 2222 log
+access-list 101 deny tcp any any eq 7000 log
+access-list 101 remark Der Spaeher, Trojan Cow:
+access-list 101 deny tcp any any eq 2001 log
+access-list 101 remark PCAnywhere:
+access-list 101 deny tcp any any eq 65301 log
+access-list 101 deny icmp any any log
+access-list 101 deny udp any any range 33400 33500 log
+access-list 101 deny udp any any eq syslog log
+access-list 101 deny udp any any eq tftp log
+access-list 101 permit tcp any any eq 443
+access-list 101 remark permit smtp to the exchange server once a true IP is obtained
+access-list 101 remark permit ftp to the COP server once a true IP is obtained
+access-list 101 deny   ip any any log
+!
+!need to permit outbound authorized traffic as a last statement otherwise most of the traffic will be denied
+access-list 104 remark apply ACL 104 to external interfaces, outbound
+access-list 104 remark TRINOO DDoS
+access-list 104 deny ip  0.0.0.0 1.255.255.255 any log
+access-list 104 deny ip  2.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  5.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  7.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  10.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  14.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  23.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  27.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  31.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  36.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  37.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  39.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  42.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  46.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  49.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  50.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  100.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  104.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  102.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  103.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  104.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  105.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  106.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  107.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  127.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  169.254.0.0 0.0.255.255 any log
+access-list 104 deny ip  172.16.0.0 0.15.255.255 any log
+access-list 104 deny ip  176.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  177.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  179.0.0.0 0.255.255.255 any log
+access-list 104 deny ip  181.0.0.0 3.255.255.255 any log
+access-list 104 deny ip  185.0.0.0 3.255.255.255 any log
+access-list 104 deny ip  192.0.2.0 0.0.0.255 any log
+access-list 104 deny ip  192.168.0.0 0.0.255.255 any log
+access-list 104 deny ip  223.0.0.0 0.255.255.255 any log
+access-list 104 remark dening 224 will prevent multcast traffic from routing
+access-list 104 deny ip  224.0.0.0 31.255.255.255 any log
+access-list 104 deny tcp any any eq 27665 log
+access-list 104 deny udp any any eq 31335 log
+access-list 104 deny udp any any eq 27444 log
+access-list 104 remark Back Orifice DDoS:
+access-list 104 deny udp any any range 31337 31338 log
+access-list 104 remark Stacheldraht DDoS:
+access-list 104 deny tcp any any eq 16660 log
+access-list 104 deny tcp any any eq 65000 log
+access-list 104 remark TrinityV3 DDoS:
+access-list 104 deny tcp any any eq 33270 log
+access-list 104 deny tcp any any eq 39168 log
+access-list 104 remark T0rn rootkit DDoS:
+access-list 104 deny tcp any any eq 47017 log
+access-list 104 remark Subseven DDoS system and some variants:
+access-list 104 deny tcp any any range 6711 6712 log
+access-list 104 deny tcp any any eq 6776 log
+access-list 104 deny tcp any any eq 6669 log
+access-list 104 deny tcp any any eq 2222 log
+access-list 104 deny tcp any any eq 7000 log
+access-list 104 remark Der Spaeher, Trojan Cow:
+access-list 104 deny tcp any any eq 2001 log
+access-list 104 remark PCAnywhere:
+access-list 104 deny tcp any any eq 65301 log
+access-list 104 permit tcp any any eq www
+access-list 104 permit tcp any any eq 443
+access-list 104 remark permit smtp from the exchange server once a true IP is obtained
+access-list 104 permit tcp any any eq ftp
+access-list 104 permit icmp any any echo-reply
+access-list 104 permit icmp any any packet-too-big
+access-list 104 permit icmp any any source-quench    
+access-list 104 permit icmp any any time-exceeded
+access-list 104 deny icmp any any log
+access-list 104 deny udp any any range 33400 33500 log
+access-list 104 deny udp any any eq syslog log
+access-list 104 deny udp any any eq tftp log
+access-list 104 deny ip any any log
+!
+access-list 120 permit tcp any any
+!
+!!!!! NOTE - the following two command lines can only be issued once, otherwise you will
+!!!!! receive a Yes/No prompt after the crypto command is processed by the CLI.
+!!!!! If this configuration file is to be loaded a second time, you should first perform a
+!!!!! clear crypto key command, or erase the startup config and then reboot. 
+crypto key generate rsa
+1024
+!
+end
+write memory
+
+
+
+
+

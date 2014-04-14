@@ -159,7 +159,8 @@ public class DB {
             int result = (int)execute(query, QUERY_TYPE_WRITE);
             if(result != 1)
                 new ErrorDialog("Error saving item");
-        }
+        }else
+			new ErrorDialog("Error saving item on parse");
     }
 
     public void setOutputFileName(ArrayList<Location> locations, String outputFileName){

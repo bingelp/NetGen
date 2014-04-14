@@ -1,0 +1,564 @@
+!###############################################
+!Modified by SPAWAR 04/01/13     6.0.0.0
+!Modified by SPAWAR 05/20/13     6.0.0.1
+!Modified by SPAWAR 08/26/13     6.0.0.2
+!###############################################
+!04/01/13 Changed to rapid spanning tree
+!04/01/13 Condensed port configuration
+!04/01/13 Updated NTP information
+!04/01/13 Changed interface p01, g0/9, g0/10, g0/14, g0/16 to vlan 20
+!04/01/13 Removed Vlan 50
+!04/01/13 Removed Port security for interfaces with servers
+!04/01/13 Added a default route
+!04/01/13 Added QoS for management traffic 
+!04/01/13 Added udld aggressive
+!04/01/13 Added STP uplink fast
+!04/01/13 Removed no service dhcp command
+!04/01/13 Changed port g0/15-16 from access to trunking ports
+
+!04/01/13 Changed P01, g0/9, & g0/10 description
+
+!04/01/13 Removed ACL 100 110
+
+!04/01/13 Removed dynamic routing and route authentication keys
+!05/20/13 Placed trunking ports in vlan 30 when line protocol is down
+!08/26/13 Updated g0/19 description 
+!###############################################
+!
+!
+!
+!
+!  Developed on Cisco 3560, IOS Version 12.2(44)SE2
+!  IOS Image 3560-ADVIPSERVICESK9-M
+!
+!
+!
+!enter router "enable" mode
+enable
+! enter router global configuration mode
+config t
+!
+no service pad
+udld aggressive
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug uptime
+service timestamps log uptime
+service password-encryption
+no service finger
+no cdp run
+no ip http server
+no ip http secure-server
+no ip source-route
+ip routing
+ip domain-name coc.usmc.smil.mil
+ip name-server 192.168.120.25
+ip classless
+ip tcp synwait-time 10
+ip multicast-routing distributed
+ip ssh time-out 60
+ip ssh version 2
+!
+hostname A2SOS
+!
+boot-start-marker
+boot-end-marker
+!
+enable secret Vinson0)Marines!1
+!
+username marine password Vinson0)Marines!1
+!
+!
+aaa new-model
+aaa authentication login default local
+aaa authentication fail-message ^CYou have failed to pass AAA login requirements!^C
+!
+!
+aaa session-id common
+!
+!
+spanning-tree mode rapid-pvst
+spanning-tree portfast bpduguard default
+spanning-tree extend system-id
+spanning-tree vlan 10-60 root secondary
+spanning-tree uplinkfast
+!
+vlan internal allocation policy ascending
+!
+class-map match-any management
+ match access-group name managementtraffic
+!
+policy-map QOSManagement
+ class management
+  police 5000000 1000000 exceed-action policed-dscp-transmit
+ class class-default
+  police 990000000 1000000 exceed-action drop
+!
+vtp domain COC
+vtp version 2
+vtp mode client
+vtp password VTPCOC
+!
+!
+!
+!
+interface Loopback0
+ ip address 192.168.0.2 255.255.255.255
+!
+interface Port-channel1
+ description FAS (g0/9 & g0/10)
+ switchport access vlan 20
+ switchport mode access
+!
+interface Port-channel2
+ description A2SOS to A3SOS (g0/5 & g0/6 & g0/7 & g0/8)
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface Port-channel3
+ description A2SOS to A1SFS (g0/49 & g0/51)
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet0/1
+ description SEP J35
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/2
+ description SEP J36
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/3
+ description SEP J37
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/4
+ description KVM SWITCH
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/5
+ description A2SOS to A3SOS (P02) SEP J31
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-protocol lacp
+ channel-group 2 mode active
+ service-policy input QOSManagement
+!
+interface GigabitEthernet0/6
+ description A2SOS to A3SOS (P02) SEP J32
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-protocol lacp
+ channel-group 2 mode active
+ service-policy input QOSManagement
+!
+interface GigabitEthernet0/7
+ description A2SOS to A3SOS (P02) SEP J33
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-protocol lacp
+ channel-group 2 mode active
+ service-policy input QOSManagement
+!
+interface GigabitEthernet0/8
+ description A2SOS to A3SOS (P02) SEP J34
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-protocol lacp
+ channel-group 2 mode active
+ service-policy input QOSManagement
+!
+interface GigabitEthernet0/9
+ description FAS (P01)
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ channel-protocol lacp
+ channel-group 1 mode active
+!
+interface GigabitEthernet0/10
+ description FAS (P01)
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ channel-protocol lacp
+ channel-group 1 mode active
+!
+interface GigabitEthernet0/11
+ description DSU 1B
+ switchport access vlan 10
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/12
+ description DSU 1A
+ switchport access vlan 10
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/13
+ description COPS SERVER NIC 1
+ switchport access vlan 20
+ switchport mode access
+!
+interface GigabitEthernet0/14
+ description COPS SERVER NIC 2
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+!
+interface GigabitEthernet0/15
+ description ESX-2U-Server-NIC1-Trunking-Vlan-Port
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet0/16
+ description ESX-2U-Server-NIC2-Trunking-Vlan-Port
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet0/17
+ description SIPR WAN ROUTER
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet0/18
+ description Jupiter
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+!
+interface GigabitEthernet0/19
+ description SIPR Data Module ESXi-1U-Server-NIC1-Trunking-Vlan-Port
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet0/20
+ description SPARE J7
+ switchport access vlan 30
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/21
+ description TIP J37
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/22
+ description TIP J38
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/23
+ description TIP J39
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/24
+ description TIP J40-Tadpole
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/25
+ description TIP J33
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/26
+ description TIP J34
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/27
+ description TIP J35
+ switchport access vlan 20
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/28
+ description TIP J36
+ switchport access vlan 20
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/29
+ description SEP FIBER J93
+ switchport access vlan 10
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/30
+ description SEP FIBER J92
+ switchport access vlan 10
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/31
+ description SEP FIBER J94
+ switchport access vlan 10
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/32
+ description SEP FIBER J1-IP Phone 1
+ switchport access vlan 10
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/33
+ description SEP FIBER J2-IP Phone 2
+ switchport access vlan 10
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface GigabitEthernet0/34
+ description SEP FIBER J95
+ switchport access vlan 10
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+!
+interface range GigabitEthernet0/35 - 48
+ description SPARE
+ switchport access vlan 30
+ spanning-tree portfast
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+ shutdown
+!
+interface GigabitEthernet0/49
+ description A2SOS to A1SFS (p03)
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-group 3 mode active
+ service-policy input QOSManagement
+!
+interface GigabitEthernet0/50
+ description spare 
+ switchport access vlan 30
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+ shutdown
+!
+interface GigabitEthernet0/51
+ description A2SOS to A1SFS (P03)
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-group 3 mode active
+ service-policy input QOSManagement
+!
+interface GigabitEthernet0/52
+ description spare 
+ switchport access vlan 30
+ switchport mode access
+ switchport port-security maximum 1
+ switchport port-security
+ switchport port-security violation restrict
+ shutdown
+!
+!
+ip route 0.0.0.0 0.0.0.0 192.168.110.1
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan10
+ ip address 192.168.110.2 255.255.255.0
+ no ip unreachables
+ no ip proxy-arp
+ !
+interface Vlan20
+ ip address 192.168.120.2 255.255.255.0
+ no ip unreachables
+ no ip proxy-arp
+!
+interface Vlan60
+ ip address 192.168.160.2 255.255.255.0
+
+ no ip unreachables
+ no ip proxy-arp
+!
+logging trap debugging
+logging source-interface Loopback0
+logging 192.168.120.43
+!
+ip access-list ext management
+permit tcp any any eq 22
+permit tcp any any eq 22 established
+permit udp any any eq snmp
+permit udp any any eq ntp
+!
+access-list 10 remark apply to vty inbound interfaces
+access-list 10 permit 192.168.160.0 0.0.0.255 log
+access-list 10 permit host 192.168.110.27 log
+access-list 10 permit host 192.168.110.28 log
+access-list 10 permit host 192.168.120.43 log
+access-list 10 deny any log
+!
+snmp-server group COCGroup v3 priv read COCview access 10
+snmp-server view COCview internet included
+snmp-server view COCview system included
+snmp-server view COCview interfaces included
+snmp-server view COCview chassis included
+snmp-server trap-source Loopback0
+snmp-server user root COCGroup v3 auth sha mypassword priv des mypassword
+!
+!
+banner login ^
+You are accessing a U.S. Government (USG) Information System (IS)
+that is provided for USG-authorized use only. By using this IS (which includes
+any device attached to this IS), you consent to the following conditions:
+- The USG routinely intercepts and monitors communications on this IS for
+purposes including, but not limited to, penetration testing, COMSEC monitoring,
+network operations and defense, personnel misconduct (PM), law enforcement (LE),
+and counterintelligence (CI) investigations. At any time, the USG may inspect
+and seize data stored on this IS. - Communications using, or data stored on,
+this IS are not private, are subject to routine monitoring, interception, and
+search, and may be disclosed or used for any USG authorized purpose. - This IS
+includes security measures (e.g., authentication and access controls) to protect
+USG interests--not for your personal benefit or privacy. - Notwithstanding the above,
+using this IS does not constitute consent to PM, LE or CI investigative searching or
+monitoring of the content of privileged communications, or work product, related
+to personal representation or services by attorneys, psychotherapists, or clergy,
+and their assistants. Such communications and work product are private and confidential.
+See User Agreement for details.
+
+
+
+^
+!
+!
+!
+line con 0
+ login authentication default
+ exec-timeout 10 0
+ logging synchronous
+line vty 0 4
+ login authentication default
+ exec-timeout 10 0
+ transport input ssh
+ access-class 10 in
+ logging synchronous
+!
+line vty 5 15
+ login authentication default
+ exec-timeout 10 0
+ transport input ssh
+ access-class 10 in
+ logging synchronous
+!
+ntp authentication-key 1 md5 NTPkey
+ntp authenticate
+ntp trusted-key 1
+ntp peer 192.168.110.1 key 1
+ntp peer 192.168.110.8 key 1
+!
+!
+!!!! NOTE - the following two command lines can only be issued once, otherwise you will
+!!!!! receive a Yes/No prompt after the crypto command is processed by the CLI.
+!!!!! If this configuration file is to be loaded a second time, you should first perform a
+!!!!! clear crypto key command, or erase the startup config and then reboot.
+crypto key generate rsa
+1024
+end
+write memory
+

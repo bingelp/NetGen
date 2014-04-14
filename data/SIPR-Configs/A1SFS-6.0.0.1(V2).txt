@@ -1,0 +1,440 @@
+!###############################################
+!Modified by SPAWAR 04/01/13    6.0.0.0
+!Modified by SPAWAR 05/20/13    6.0.0.1
+!###############################################
+!04/01/13 Changed to rapid spanning tree
+!04/01/13 Condensed port configuration
+!04/01/13 Updated NTP information
+!04/01/13 Updated route authentication key expiration time
+!04/01/13 Changed spanning tree root parameter
+!04/01/13 Removed VLAN 50
+!04/01/13 Added a default route
+!04/01/13 Added QoS for management traffic
+!04/01/13 Changed vlan 20 to eigrp passive interface
+!04/01/13 Added udld aggressive
+!04/01/13 Added STP uplink fast
+!04/01/13 Removed no service dhcp command
+!04/01/13 Updated route authentication key expiration time
+!05/20/13 Corrected eigrp passive interface syntax
+!05/20/13 Placed trunking ports in vlan 30 when line protocol is down 
+!###############################################
+!
+!
+!
+!  Developed on Cisco 3750, IOS Version 12.2(44)SE2
+!  IOS Image 3750-ADVIPSERVICESK9-M
+!
+!
+!
+!
+!enter router "enable" mode
+enable
+! enter router global configuration mode
+config t
+!
+no service pad
+udld aggressive
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug uptime
+service timestamps log uptime
+service password-encryption
+no service finger
+no cdp run
+no ip http server
+no ip http secure-server
+no ip source-route
+ip routing
+ip domain-name coc.usmc.smil.mil
+ip name-server 192.168.120.25
+ip classless
+ip tcp synwait-time 10
+ip multicast-routing distributed
+ip ssh time-out 60
+ip ssh version 2
+!
+hostname A1SFS
+!
+boot-start-marker
+boot-end-marker
+!
+enable secret Vinson0)Marines!1
+!
+username marine password Vinson0)Marines!1
+!
+!
+aaa new-model
+aaa authentication login default local
+aaa authentication fail-message ^CYou have failed to pass AAA login requirements!^C
+!
+!
+!
+aaa session-id common
+switch 1 provision ws-c3750g-12s
+switch 2 provision ws-c3750g-12s
+!
+!
+!
+key chain COC
+ key 1
+   key-string COCkey1
+   accept-lifetime 00:00:00 Mar 1 2013 00:00:00 Sep 1 2013
+   send-lifetime 00:00:00 Mar 1 2013 00:00:00 Sep 1 2013
+ key 2
+   key-string COCkey2
+   accept-lifetime 00:00:00 Sep 1 2013 00:00:00 Mar 1 2014
+   send-lifetime 00:00:00 Sep 1 2013 00:00:00 Mar 1 2014
+ key 9999
+   key-string COCkey3
+   accept-lifetime 00:00:00 Mar 1 2013 infinite
+   send-lifetime 00:00:00 Mar 1 2013 infinite
+!
+class-map match-any management
+ match access-group name managementtraffic
+!
+policy-map QOSManagement
+ class management
+  police 5000000 1000000 exceed-action policed-dscp-transmit
+ class class-default
+  police 990000000 1000000 exceed-action drop
+!
+!
+vtp domain COC
+vtp version 2
+vtp mode server
+vtp password VTPCOC
+!
+vlan 10
+name Users
+exit
+vlan 20
+name Servers
+exit
+vlan 30
+name Inactive_Ports
+exit
+vlan 40
+name Trunking
+exit
+vlan 60
+name Management
+exit
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+spanning-tree vlan 10-60 priority 0
+spanning-tree uplinkfast
+!
+vlan internal allocation policy ascending
+!
+interface Loopback0
+ip address 192.168.0.1 255.255.255.255
+!
+interface Port-channel1
+ description SFS to CPOF (g1/0/1 & g2/0/1) 
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface Port-channel2
+ description SFS to A2SOS (g1/0/4 & g2/0/8)
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface Port-channel3
+ description SFS to A3SOS (g2/0/4 & g1/0/8)
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/1
+ description CPOF Port Channel link (p01)
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-group 1 mode active
+!
+interface GigabitEthernet1/0/2
+ description A2STS1
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/3
+ description A2STS2
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/4
+ description SFS to A2SOS Port channel Link (p02)
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-group 2 mode active
+!
+interface GigabitEthernet1/0/5
+ description A7SHS1
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/6
+ description A1STS1
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/7
+ description A4STS1
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet1/0/8
+ description SFS to A3SOS Port Channel Link (p03)
+ switchport access vlan 30 
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-group 3 mode active
+!
+interface range GigabitEthernet1/0/9 - 12
+ switchport access vlan 30
+ switchport mode access
+ shutdown
+!
+interface GigabitEthernet2/0/1
+ description CPOF Port Channel link (p01)
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-group 1 mode active
+!
+interface GigabitEthernet2/0/2
+ description A3STS1
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet2/0/3
+ description A3STS2
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet2/0/4
+ description SFS to A3SOS Port Channel Link (p03)
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-group 3 mode active
+!
+interface GigabitEthernet2/0/5
+ description A7SHS2
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet2/0/6
+ description A1STS2
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet2/0/7
+ description A5STS1
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+!
+interface GigabitEthernet2/0/8
+ description SFS to A2SOS Port channel Link (P02)
+ switchport access vlan 30
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 40
+ switchport mode trunk
+ channel-group 2 mode active
+!
+interface range GigabitEthernet2/0/9 - 12
+ description SPARE
+ switchport access vlan 30
+ switchport mode access
+ shutdown
+!
+interface range GigabitEthernet1/0/1 - 8
+switchport access vlan 30
+!
+interface range GigabitEthernet2/0/1 - 8
+switchport access vlan 30
+!
+interface range g1/0/1 - 9
+service-policy input QOSManagement
+!
+interface range g2/0/1 - 9
+service-policy input QOSManagement
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan10
+ ip address 192.168.110.1 255.255.255.0
+ no ip unreachables
+ no ip proxy-arp
+ ip pim sparse-dense-mode
+ ip authentication mode eigrp 101 md5
+ ip authentication key-chain eigrp 101 COC
+!
+interface Vlan20
+ ip address 192.168.120.1 255.255.255.0
+ no ip unreachables
+ no ip proxy-arp
+ ip pim sparse-dense-mode
+!
+interface Vlan60
+ ip address 192.168.160.1 255.255.255.0
+ ip access-group 110 in
+ ip access-group 100 out
+ no ip unreachables
+ no ip proxy-arp
+!
+!
+router eigrp 101
+ no auto-summary
+ network 192.168.110.0
+ network 192.168.120.0
+ passive-interface vlan 20
+ ip route 0.0.0.0 0.0.0.0 192.168.110.3
+ 
+
+!
+!
+logging trap debugging
+logging source-interface Loopback0
+logging 192.168.120.43
+!
+ip access-list extended management
+ permit tcp any any eq 22
+ permit tcp any any eq 22 established
+ permit udp any any eq snmp
+ permit udp any any eq ntp
+!
+access-list 10 remark apply to vty inbound interfaces
+access-list 10 permit 192.168.160.0 0.0.0.255 log
+access-list 10 permit host 192.168.110.27 log
+access-list 10 permit host 192.168.110.28 log
+access-list 10 permit host 192.168.120.43 log
+access-list 10 deny any log
+!
+access-list 100 remark apply to outbound mang vlan
+access-list 100 permit ip 192.168.160.0 0.0.0.255 192.168.160.0 0.0.0.255 log
+access-list 100 permit ip host 192.168.120.43 192.168.160.0 0.0.0.255  log
+access-list 100 permit ip host 192.168.110.27 192.168.160.0 0.0.0.255  log
+access-list 100 permit ip host 192.168.110.28 192.168.160.0 0.0.0.255  log
+access-list 100 deny ip any any log
+!
+access-list 110 remark apply to inbound mang vlan
+access-list 110 permit ip 192.168.160.0 0.0.0.255 192.168.160.0 0.0.0.255 log
+access-list 110 permit ip 192.168.160.0 0.0.0.255 host 192.168.120.43 log
+access-list 110 permit ip 192.168.160.0 0.0.0.255 host 192.168.110.27 log
+access-list 110 permit ip 192.168.160.0 0.0.0.255 host 192.168.110.28 log
+access-list 110 deny ip any any log 
+!
+snmp-server group COCGroup v3 priv read COCview access 10
+snmp-server view COCview internet included
+snmp-server view COCview system included
+snmp-server view COCview interfaces included
+snmp-server view COCview chassis included
+snmp-server trap-source Loopback0
+snmp-server user root COCGroup v3 auth sha mypassword priv des mypassword
+!
+!
+!
+banner login ^
+You are accessing a U.S. Government (USG) Information System (IS)
+that is provided for USG-authorized use only. By using this IS (which includes
+any device attached to this IS), you consent to the following conditions:
+- The USG routinely intercepts and monitors communications on this IS for
+purposes including, but not limited to, penetration testing, COMSEC monitoring,
+network operations and defense, personnel misconduct (PM), law enforcement (LE),
+and counterintelligence (CI) investigations. At any time, the USG may inspect
+and seize data stored on this IS. - Communications using, or data stored on,
+this IS are not private, are subject to routine monitoring, interception, and
+search, and may be disclosed or used for any USG authorized purpose. - This IS
+includes security measures (e.g., authentication and access controls) to protect
+USG interests--not for your personal benefit or privacy. - Notwithstanding the above,
+using this IS does not constitute consent to PM, LE or CI investigative searching or
+monitoring of the content of privileged communications, or work product, related
+to personal representation or services by attorneys, psychotherapists, or clergy,
+and their assistants. Such communications and work product are private and confidential.
+See User Agreement for details.
+
+
+
+^
+!
+!
+line con 0
+ login authentication default
+ exec-timeout 10 0
+ logging synchronous
+line vty 0 4
+ login authentication default
+ exec-timeout 10 0
+ transport input ssh
+ access-class 10 in
+ logging synchronous
+!
+line vty 5 15
+ login authentication default
+ exec-timeout 10 0
+ transport input ssh
+ access-class 10 in
+ logging synchronous
+!
+ntp authentication-key 1 md5 NTPkey
+ntp authenticate
+ntp trusted-key 1
+ntp peer 192.168.110.2 key 1
+ntp peer 192.168.110.3 key 1
+ntp peer 192.168.110.4 key 1
+ntp peer 192.168.110.5 key 1
+ntp peer 192.168.110.6 key 1
+ntp peer 192.168.110.7 key 1
+ntp peer 192.168.110.8 key 1
+ntp peer 192.168.110.9 key 1
+ntp peer 192.168.110.10 key 1
+ntp peer 192.168.110.11 key 1
+ntp peer 192.168.110.12 key 1
+ntp peer 192.168.110.13 key 1
+ntp peer 192.168.110.14 key 1
+ntp peer 192.168.110.15 key 1
+ntp peer 192.168.110.16 key 1
+
+!
+!
+!!!!! NOTE - the following two command lines can only be issued once, otherwise you will
+!!!!! receive a Yes/No prompt after the crypto command is processed by the CLI.
+!!!!! If this configuration file is to be loaded a second time, you should first perform a
+!!!!! clear crypto key command, or erase the startup config and then reboot.
+crypto key generate rsa
+1024
+end
+write memory
+
+

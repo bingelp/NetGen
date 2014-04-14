@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 public class Parser {
     String inputDirectoryPath                       = null;
     private String fileNameShort                    = null;
+	private String fileName 						= null;
     DB db                                           = null;
     public static String SPACE                      = "\\s";
     public int fileIndex                            = 0;
@@ -53,7 +54,8 @@ public class Parser {
             db.saveFile(fileName);
             String text;
             File f = new File(this.inputDirectoryPath + "\\" + fileName);
-            this.fileNameShort = f.getName().split("-")[0];
+			this.fileName = fileName;
+            this.fileNameShort = fileName.split("-")[0];
             this.reader = new LineNumberReader(new FileReader(f));
             this.reader.skip(Long.MAX_VALUE);
             this.reader = new LineNumberReader(new FileReader(f));
@@ -298,7 +300,7 @@ public class Parser {
             this.cp = new ContainerPanel();
         this.cp.elements.put(type, ep);
         this.cp.add(this.cp.elements.get(type));
-        db.saveItem(this.fileNameShort,l.lineNumber,target);
+        db.saveItem(this.fileName,l.lineNumber,target);
     }
     private void containerize(String group, int tab){
         String key = this.cp.elements.keySet().toString();
