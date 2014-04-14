@@ -35,7 +35,6 @@ public class GUI extends JFrame {
     private ProgressWindow progressWindow           = null;
     public File directory                           = null;
     private ActionListener generateAction           = null;
-    public static Color GREEN                       = new Color(0, 255, 100);
     public static String GENERATED_FOLDER           = "Generated";
     public DB db;
 
@@ -196,7 +195,7 @@ public class GUI extends JFrame {
 		//Shown initially when the program starts and when text field errors are fixed
         if(this.generateButton.getActionListeners().length == 0) {
             this.generateButton.setText("Generate");
-            this.generateButton.setBackground(GREEN);
+            this.generateButton.setBackground(NetGen.COLOR_GREEN);
             this.generateButton.addActionListener(generateAction);
         }
     }
