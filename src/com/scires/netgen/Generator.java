@@ -30,7 +30,7 @@ public class Generator{
         this.inputDirectory = new File(inputDirectoryPath);
         dirExists = this.inputDirectory.exists() || this.inputDirectory.mkdir();
         if(dirExists) {
-            outputDirectory = new File(inputDirectoryPath + "\\" + IPGUI.GENERATED_FOLDER);
+            outputDirectory = new File(inputDirectoryPath + "\\" + GUI.GENERATED_FOLDER);
             if(!outputDirectory.exists()) {
                 boolean success = outputDirectory.mkdir();
                 if(!success)

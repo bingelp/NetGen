@@ -11,23 +11,23 @@ import java.util.ArrayList;
 /**
  * Created by Justin on 3/3/14.
  *
- * <P>Single Element that replaces one string with another.  Contains multiple @{link Location}s defining
- * where the target string is</P>
+ * <P>Single Element that replaces one string with another.  Contains multiple {@link com.scires.netgen.Location}s
+ * defining where the target string is</P>
  *
  * @author Justin Robinson
  * @version 0.0.4
  */
 public class ElementPanel extends MinimumPanel {
-    public JLabel label                     = null;
-    public JComponent component                = null;
-    public ArrayList<Location> locations    = null;
+    public JLabel label						= null;
+    public JComponent component				= null;
+    public ArrayList<Location> locations	= null;
     public String target                    = null;
-    public String replacement                = null;
-    public String regex                        = null;
-    public String originalText                = null;
+    public String replacement				= null;
+    public String regex						= null;
+    public String originalText				= null;
     public boolean originalState                  ;
-    public String trueText                    = null;
-    public String falseText                    = null;
+    public String trueText					= null;
+    public String falseText					= null;
 
     public ElementPanel(JComponent component, String labelText, Location location, String target, String regex){
         this.label = new JLabel(labelText);
@@ -74,7 +74,7 @@ public class ElementPanel extends MinimumPanel {
             checkBox.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    IPGUI i = (IPGUI) SwingUtilities.getRoot(checkBox);
+                    GUI i = (GUI) SwingUtilities.getRoot(checkBox);
                     ElementPanel ep = (ElementPanel)checkBox.getParent();
                     if(checkBox.isSelected() != ep.originalState) {
                         ep.replacement = checkBox.isSelected() ? ep.trueText : ep.falseText;
@@ -110,7 +110,7 @@ public class ElementPanel extends MinimumPanel {
     }
 
     private void checkDateField(RouterDatePicker rdp){
-        IPGUI i = (IPGUI) SwingUtilities.getRoot(this);
+        GUI i = (GUI) SwingUtilities.getRoot(this);
         if( i != null) {
             String currentText = rdp.getRouterTime();
             boolean changed = !currentText.matches(this.originalText);
@@ -123,7 +123,7 @@ public class ElementPanel extends MinimumPanel {
         //
         // Get base pane
         //
-        IPGUI i = (IPGUI) SwingUtilities.getRoot(this);
+        GUI i = (GUI) SwingUtilities.getRoot(this);
         if(i != null){
             String text = textField.getText();
             int activeTab = i.tabbedPane.getSelectedIndex();

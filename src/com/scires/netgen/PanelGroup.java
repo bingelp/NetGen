@@ -7,6 +7,7 @@ import java.awt.*;
 /**
  * Created by Justin on 2/26/14.
  *
+ * Encompasses a {@link com.scires.netgen.ContainerPanel} if it has a group defined
  *
  * @author Justin Robinson
  * @version 0.0.5

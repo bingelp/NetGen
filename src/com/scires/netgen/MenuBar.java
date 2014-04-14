@@ -15,7 +15,7 @@ import java.io.File;
  */
 public class MenuBar extends JMenuBar {
 
-    IPGUI i;
+    GUI i;
     AboutWindow aboutWindow;
 
     private enum Action {
@@ -65,12 +65,14 @@ public class MenuBar extends JMenuBar {
     }
 
     public void chooseDirectory(Action action){
-        int option = JFileChooser.FILES_ONLY;
+		// Opens a file/folder picker dialog based on action
+        int option = -1;
         String title = null;
-        i = (IPGUI) SwingUtilities.getRoot(this);
+        i = (GUI) SwingUtilities.getRoot(this);
         JFileChooser chooser = new JFileChooser();
         switch (action){
             case FILE:
+				option = JFileChooser.FILES_ONLY;
                 title = "Open file";
                 break;
             case DIRECTORY:
@@ -78,8 +80,9 @@ public class MenuBar extends JMenuBar {
                 title = "Select root folder containing config files";
                 break;
         }
-
+		//apply file or folder option
         chooser.setFileSelectionMode(option);
+		//set current directory of picker to the directory of NetGen.jar
         chooser.setCurrentDirectory(new File("."));
         chooser.setDialogTitle(title);
         chooser.setAcceptAllFileFilterUsed(false);

@@ -13,33 +13,42 @@ import java.awt.*;
  */
 public class ProgressWindow extends JWindow {
     Container container;
-    private JProgressBar primaryProgressBar = null;
+    private JProgressBar progressBar	= null;
 
-    public ProgressWindow(int numFiles){
+    public ProgressWindow(int numFiles, Point p, Dimension guiSize){
         container = getContentPane();
+		//width is 60% of main window
+		int width = (int)(guiSize.width * 0.6);
+		int height = width/10;
 
-        this.setMaximumSize(new Dimension(600, 200));
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-        this.setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
+		//center on main screen
+		int x = p.x + guiSize.width/2 - width/2;
+		int y = p.y + guiSize.height/2 - height/2;
+        this.setLocation(x,y);
 
+		// add progressBar to panel
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(0,1));
+        this.progressBar = new JProgressBar(0, numFiles);
+		this.progressBar.setPreferredSize(new Dimension(width, height));
+        panel.add(this.progressBar);
 
-        this.primaryProgressBar = new JProgressBar(0, numFiles);
-        panel.add(this.primaryProgressBar);
-
+		// add panel to this
         this.add(panel);
+		this.setAlwaysOnTop(true);
         this.pack();
     }
     public void reset(int n){
-        this.primaryProgressBar.setMaximum(n);
-        this.primaryProgressBar.setValue(0);
+		//reset value to 0 and max value to n
+        this.progressBar.setMaximum(n);
+        this.progressBar.setValue(0);
     }
     public void incrementProgress(int n){
-        int newFileNumber = this.primaryProgressBar.getValue()+n;
-        this.primaryProgressBar.setValue(newFileNumber);
+		// increment progress bar by n
+        this.progressBar.setValue(this.progressBar.getValue()+n);
     }
     public void setProgress(int n){
-        this.primaryProgressBar.setValue(n);
+		// set progress to a specific value
+        this.progressBar.setValue(n);
     }
 }

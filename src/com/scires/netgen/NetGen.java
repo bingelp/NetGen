@@ -56,7 +56,7 @@ public class NetGen {
         float version = Float.parseFloat(split[0]);
         version += Float.parseFloat(split[1])/10;
         if(version >= 1.7)
-            new IPGUI();
+            new GUI();
         else
             new ErrorDialog("Java version 1.7 or greater is required to run NetGen");
     }

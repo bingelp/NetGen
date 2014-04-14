@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Created by Justin on 3/7/14.
  *
- * <P>Parser Thread to generate gui based on CISCO config files</P>
+ * <P>Parser Thread to get all files in inputDirectoryPath and parse them using {@link com.scires.netgen.Parser}</P>
  *
  * @author Justin Robinson
  * @version 0.2.0
@@ -31,19 +31,21 @@ public class ParserWorker extends SwingWorker<Integer, Integer> {
 
     @Override
     protected Integer doInBackground() throws Exception {
-        for(String file : files) {
+		// Parse each file
+        for(String file : files)
             setProgress(parser.parseFile(file));
-        }
         return 1;
     }
 
     public void getFiles(){
+		// Returns array of file(s)
+		// inputDirectory could be a file or folder so we need to check
         inputDirectory = new File(inputDirectoryPath);
         if(this.inputDirectory.isDirectory()){
             FilenameFilter noGenerateFolder = new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return !name.matches(IPGUI.GENERATED_FOLDER);
+                    return !name.matches(GUI.GENERATED_FOLDER);
                 }
             };
             files = inputDirectory.list(noGenerateFolder);

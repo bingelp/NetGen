@@ -20,6 +20,7 @@ public class RouterDatePicker extends JXDatePicker {
 
     public RouterDatePicker(){
         sdf = new SimpleDateFormat(ROUTER_DATE_FORMAT);
+		//sets display format to CISCO style
         this.setFormats(ROUTER_DATE_FORMAT);
     }
 
@@ -28,6 +29,7 @@ public class RouterDatePicker extends JXDatePicker {
     }
 
     public void makeTimeFromRouter(String routerTime){
+		//Converts times from config files into valid JXDatePicker format
         if( routerTime.matches("infinite"))
             this.getEditor().setText(routerTime);
         else{
@@ -35,9 +37,8 @@ public class RouterDatePicker extends JXDatePicker {
             try{
                 date = sdf.parse(routerTime);
             }catch (Exception e){
-                System.out.println(Parser.ERROR + e.getMessage() + TAG);
+                new ErrorDialog(Parser.ERROR + e.getMessage() + TAG);
             }
-
             if (date != null){
                 this.setDate(date);
             }

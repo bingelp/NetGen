@@ -10,7 +10,10 @@ import java.util.regex.Pattern;
 /**
  * Created by Justin on 4/12/2014.
  *
- * <P>File Parser</P>
+ * <P>Parses files from the inputDirectoryPath it receives from {@link com.scires.netgen.GUI}.  Then stores the recognized
+ * commands and their values in {@link com.scires.netgen.ElementPanel}s and those in @{link ContainerPanel}s.
+ * Parts of that information is stored again using {@link com.scires.netgen.DB} for later use by
+ * {@link com.scires.netgen.Generator}</P>
  *
  * @author Justin Robinson
  * @version 0.0.1
@@ -107,6 +110,7 @@ public class Parser {
     }
 
     private int getCommand(String line){
+		//checks if line start with a recognized command
         int out = -1;
         for( int i=0; i< COMMAND_LIST.length; i++){
             if (line.startsWith(COMMAND_LIST[i])){
@@ -282,6 +286,8 @@ public class Parser {
 
 
     private void markElement(JComponent component, String target, String labelText, String type, String regex){
+		// Creates an ElementPanel for the current line and adds it to a ContainerPanel
+		// Saves line information to the database for Generator to use later
         if(component == null)
             component = new JTextField(15);
         Location l = new Location();
@@ -303,6 +309,7 @@ public class Parser {
         db.saveItem(this.fileName,l.lineNumber,target);
     }
     private void containerize(String group, int tab){
+		// Adds current ContainerPanel to ArrayList of ContainerPanels
         String key = this.cp.elements.keySet().toString();
         if ( group != null )
             key += group;
